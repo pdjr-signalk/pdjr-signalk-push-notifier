@@ -5,21 +5,21 @@ Forward Signal K notifications over email and web-push.
 ## Description
 
 **pdjr-skplugin-push-notifier** forwards Signal K notifications using
-either email or web-push notification protocols (or both!).
-To be in any way useful the plugin requires an operating environment
-that supports at least intermittent Internet connectivity.
+either email or web-push and to be in any way useful requires an
+operating environment that supports at least intermittent Internet
+connectivity.
 
 Email forwarding requires that the Signal K server has access to an
 SMTP mail submssion agent (MSA).
 The plugin uses
 [nodemailer](https://nodemailer.com/)
 as its mail user agent (MUA) and so works happily with most popular
-mail services.
+Internet mail services.
 
 Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509
 keys either signed and distributed by a trusted authority or (more likely
-on a private LAN) self-signed and manually installed.
+on a private LAN) self-signed and manually distributed.
 
 Signal K users can subscribe to and unsubscribe from push services using
 the plugin's Webapp.
