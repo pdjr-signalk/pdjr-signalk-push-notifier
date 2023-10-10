@@ -48,45 +48,40 @@ K OpenAPI service.
   <dt>Signal K credentials (<code>credentials</code>)</dt>
   <dd>
     <p>
-    Enter a string of the form <em>username</em>:<em>password</em>
+    This required string must have the form <em>username</em>:<em>password</em>
     providing credentials that will allow the plugin to access the API
     method of another Signal K service over HTTP.
     </p>
     <p>
     You can use the credentials of an existing Signal K user, but you may
-    want to create a new user for the exclusive use by the plugin.
-    </p>
-    <p>
-    This property must be supplied.
+    prefer to create a new user for the exclusive use of the plugin.
     </p>
   </dd>
   <dt>Monitor these paths (<code>paths</code>)</dt>
   <dd>
     <p>
-    Enter a list of items which define the Signal K notification paths that
-    the plugin should monitor.
+    This required a list of strings each defines the Signal K notification
+    paths that the plugin should monitor and any circumstances under which
+    the plugin should restart.
     </p>
     <p>
     Each item in the list can be:
     <ul>
       <li>
         a Signal K path (for example <code>tanks.wasteWater.0.currentLevel</code>)
-        which should be monitored for notifications;
+        which should be monitored for notifications; or
       </li>
       <li>
         a URL specifying an API method that returns a list of Signal K paths
-        (for example <code>https://localhost:3443/plugins/alarm-manager/keys</code>).
+        (for example <code>https://localhost:3443/plugins/alarm-manager/keys</code>); or
       </li>
       <li>
         a Signal K path of the form 'restart:<em>path</em>' (for example
-        <code>restart:notifications.plugins.alarm-manager.keyChange</code>).
-        A value change on this path will restart the plugin.
+        <code>restart:notifications.plugins.alarm-manager.keyChange</code>):
+        a value change on this path will restart the plugin.
       </li>
     </ul>
-    </p>
-    <p>
-    This property must be supplied.
-    </p>
+  </p>
   </dd>
   <dt>Subscriber database (<code>subscriberDatabase</code>)</dt>
   <dd>
