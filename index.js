@@ -141,7 +141,7 @@ module.exports = function (app) {
           // Register listeners for any 'restart:' paths.
           plugin.options.paths.filter(path => (path.startsWith("restart:"))).forEach(path => {
             [label, notificationPath] = path.split(":");
-            app.debug("registering restart listener on '%s'", notificationPath);
+            log.N("registering restart listener on '%s'", notificationPath, false);
             const stream = app.streambundle.getSelfStream(notificationPath);
             unsubscribes.push(stream.onValue((notification) => {
               log.N("restarting because of rule '%s'", path);
@@ -189,6 +189,7 @@ module.exports = function (app) {
                       if ((plugin.email) && (subscribers.email.length > 0)) {
                         // But only is the notification method is of interest.
                         if (notification.method.reduce((a,v) => ((plugin.options.services.email.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
+                          log.N("sending message to email subscribers", false);
                           plugin.email.send(
                             { ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } }
                           );
@@ -199,6 +200,7 @@ module.exports = function (app) {
                       if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
                         // But only is the notification method is of interest.
                         if (notification.method.reduce((a,v) => ((plugin.options.services.webpush.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
+                          log.N("sending notification to web-push subscribers", false);
                           plugin.webpush.send(
                             createPushNotificationFromNotification(notification, path),
                             subscribers.webpush.map(subscriber => subscriber.subscription),

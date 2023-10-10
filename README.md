@@ -56,6 +56,9 @@ K OpenAPI service.
     You can use the credentials of an existing Signal K user, but you may
     want to create a new user for the exclusive use by the plugin.
     </p>
+    <p>
+    This property must be supplied.
+    </p>
   </dd>
   <dt>Monitor these paths (<code>paths</code>)</dt>
   <dd>
@@ -81,61 +84,77 @@ K OpenAPI service.
       </li>
     </ul>
     </p>
+    <p>
+    This property must be supplied.
+    </p>
   </dd>
   <dt>Subscriber database (<code>subscriberDatabase</code>)</dt>
   <dd>
     <p>
+    This optional property defines the Signal K resources provider that
+    will be used to store email and web-push subscriptions.
     </p>
+    <p>
+    If you omit this property a default value will be used that selects
+    the Signal K built-in resources provider (<code>resources-provider</code>)
+    and the resource type <code>push-notifier</code>.
+    </p>
+    <p>
+    You must create a custom resource type in the specified resource
+    provider configuration that matches the resource type name expected
+    by this plugin.
     <dl>
       <dt>Resources provider <code>resourcesProvider</code></dt>
       <dd>
         <p>
-        Enter the name of the Signal K resources provider that will be
-        used to persist subscriber data (defaults to 'resources-provider').
+        The name of the Signal K resources provider that will be
+        used to persist subscriber data.
         </p>
       </dd>
       <dt>Resource type <code>resourceType</code></dt>
       <dd>
         <p>
-        Enter the name of the resource type under which ubscriber data will
-        be stored (defaults to 'push-notifier').</p>
-        <p>
-        You will need to make sure that the resource type specified is
-        configured/created in the specified resources provider.</p>
+        The name of the resource type under which subscriber data will
+        be stored.
+        </p>
       </dd>
     </dl>
   </dd>
   <dt>Services <code>services</code></dt>
   <dd>
     <p>
-    Enter here configuration data required for the services you wish
-    to use.
+    This required property supplies configuration data for the email
+    and web-push services and, for the plugin to do anything, at least
+    one of these configurations must be supplied.
     </p>
     <dl>
       <dt>Email <code>email</code></dt>
       <dd>
         <p>
+        Optional property supplying configuration data for the email
+        service.
+        </p>
+        <p>
         The plugin uses
         [nodemailer](https://nodemailer.com/)
-        as its mail user agent and configuration primarily involves
-        identifying a <code>nodemailer</code> transport configuration
-        object suitable for your mail submission agent and then
-        embedding this object as a JSON string on the plugin
-        configuration.
+        as its mail user agent and some of the supplied configuration
+        data must be supplied in a format acceptable to this module.
+        </p>
         <dl>
           <dt>Methods <code>methods</code></dt>
           <dd>
             <p>
-            Enter a comma-separated list of Signal K notification methods which
-            should trigger the output of a push notification to all subscribed
-            users.
+            Required property supplying a comma-separated list of
+            Signal K notification methods which should trigger the
+            output of a push notification all users subscribed to the
+            email service.
             </p>
             <p>
-            Signal K defines 'visual' and 'sound' as default methods, but plugins
-            which create notifications can extend this range.
-            For example,
-            <a href="https://github.com/pdjr-signalk/pdjr-skplugin-alarm-manager">pdjr-skplugin-alarm-manager</a>
-            makes available a 'push' method.
+            Signal K defines 'visual' and 'sound' as default methods,
+            but plugins which create notifications can extend this
+            range.
+            See, for example,
+            <a href="https://github.com/pdjr-signalk/pdjr-skplugin-alarm-manager">pdjr-skplugin-alarm-manager</a>.
             </p>
           </dd>
           <dt>Nodemailer transport options <code>transportOptions</code></dt>
@@ -163,58 +182,49 @@ K OpenAPI service.
       <dt>Web push <code>webpush</code></dt>
       <dd>
         <p>
+        Optional property supplying configuration data for the web-push
+        service.
+        </p>
+        <p>
+        VAPID keys are required by the push notification protocols.
+        These can be easily
+        <a href="https://iamstepaul.hashnode.dev/generating-a-secure-vapid-key-for-a-nodejs-project#heading-using-the-comand-line">obtained from the command line</a>
+        and the returned values must be made available through either
+        the ```transportOptions.vapid``` property or by assigning them
+        to the environment variables VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY
+        and VAPID_SUBJECT from where the plugin can retrieve them.
         </p>
         <dl>
           <dt>Methods <code>methods</code></dt>
           <dd>
             <p>
-            Enter a comma-separated list of Signal K notification methods which
-            should trigger the output of a push notification to all subscribed
-            users.
+            Required property supplying a comma-separated list of
+            Signal K notification methods which should trigger the
+            output of a web-push notification to users subscribed to
+            the web-push service.
             </p>
             <p>
-            Signal K defines 'visual' and 'sound' as default methods, but plugins
-            which create notifications can extend this range.
-            For example,
-            <a href="https://github.com/pdjr-signalk/pdjr-skplugin-alarm-manager">pdjr-skplugin-alarm-manager</a>
-            makes available a 'push' method.
+            Signal K defines 'visual' and 'sound' as default methods,
+            but plugins which create notifications can extend this
+            range.
+            See, for example,
+            <a href="https://github.com/pdjr-signalk/pdjr-skplugin-alarm-manager">pdjr-skplugin-alarm-manager</a>.
             </p>
           </dd>
-          <dt>VAPID encryption data <code>vapid</code></dt>
+          <dt>Web-push transport options <code>transportOptions</code></dt>
           <dd>
             <p>
-            Enter the public and private VAPID keys assigned to
-            your Signal K server, or omit this property entirely
-            to recover these values from the environment variables
-            <code>VAPID_PUBLIC_KEY</code>,
-            <code>VAPID_PRIVATE_KEY</code> ans
-            <code>VAPID_SUBJECT</code>.
+            Optional string containing a JSON encoded object containing
+            a 'vapid' object with string properties 'privateKey',
+            'publicKey' and 'subject'.
             </p>
             <p>
-            VAPID keys are required by the push notification protocols
-            and can be easily
-            (<a href="https://iamstepaul.hashnode.dev/generating-a-secure-vapid-key-for-a-nodejs-project#heading-using-the-comand-line">obtained from the command line</a>).
+            If omitted, the the plugin will attempt to recover VAPID
+            data from the environment variables
+            <code>VAPID_PUBLIC_KEY</code>,
+            <code>VAPID_PRIVATE_KEY</code> and
+            <code>VAPID_SUBJECT</code>.
             </p>
-            <dl>
-              <dt>Private key <code>privateKey</code></dt>
-              <dd>
-                <p>
-                Enter your server's VAPID public key.
-                </p>
-              </dd>
-              <dt>Public key <code>publicKey</code></dt>
-              <dd>
-                <p>
-                Enter your server's VAPID private key.
-                </p>
-              </dd>
-              <dt>Subject <code>subject</code></dt>
-              <dd>
-                <p>
-                Enter a value for the VAPID subject property.
-                </p>
-              </dd>
-            </dl>
           </dd>
         </dl>
       </dd>
@@ -242,7 +252,7 @@ looks like this.
         "messageOptions": "{ \"from\": \"noreply@mydomain\" }"
       },
       "webpush": {
-        "methods": "push",
+        "methods": "push"
       }
     }
   },
@@ -252,9 +262,8 @@ looks like this.
 
 ```
 I keep my VAPID keys in environment variables and the absence of a
-```services.webpush.vapid``` property forces the plugin to recover
-its VAPID data from the host environment's ```VAPID_PUBLIC_KEY```,
-```VAPID_PRIVATE_KEY``` and ```VAPID_SUBJECT``` variables.
+```services.webpush.transportOptions``` property forces the plugin to
+recover its VAPID data from the host environment.
 
 The absence of a ```subscriberDatabase``` property forces the plugin to
 use Signal K's default ```resources-provider``` plugin and the default
