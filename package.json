@@ -1,0 +1,42 @@
+{
+  "name": "pdjr-skplugin-push-notifier",
+  "version": "2.1.0",
+  "description": "Forward Signal K notifications over email and web-push.",
+  "main": "index.js",
+  "signalk-plugin-enabled-by-default": true,
+  "scripts": {
+    "format": "prettier-standard 'index.js'",
+    "publish": "yq -o=json -I=2 resources/openApi.yaml > resources/openApi.json",
+    "test": "mocha",
+    "prepublishOnly": "npm run clean && npm run build",
+    "dev": "webpack --watch --mode development",
+    "build": "webpack --mode=production",
+    "clean": "rimraf ./public",
+    "bundle-analyzer": "webpack-bundle-analyzer --port 4200 public/stats.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier.git"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-webapp",
+    "signalk-category-utility"
+  ],
+  "author": "Paul Reeve <preeve@pdjr.eu>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier/issues"
+  },
+  "homepage": "https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "sprintf-js": "^1.1.2",
+    "web-push": "^3.6.6"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {
+  }
+}

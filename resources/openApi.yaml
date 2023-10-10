@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: HTTP API for pdjr-skplugin-push-notifier
+  version: 1.0.0
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: |
+    [pdjr-skplugin-push-notifier](https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier)
+    is a plugin for the
+    [Signal K node server](https://github.com/SignalK/signalk-server).
+
+    A Signal K server hosting the plugin will present this API under
+    the root https://*server_ip*:*server_port*/plugins/push-notifier.
+externalDocs:
+  description: Plugin README document
+  url: https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme 
+paths:
+  /keys:
+    get:
+      description: |
+        Get a JSON array containing all the Signal K keys that are
+        currently being monitored by the plugin.
+      responses:
+        200:
+          description: |
+            Success.
+            The response body contains a JSON string array where
+            each item is a Signal K data path.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        500:
+          description: |
+            Error.
+            The server was unable to service the request.
+  /subscribe/{subscriberId}:
+    post:
+      description: |
+        Add a push notification subscription to the plugin database.
+      parameters:
+        - in: path
+          name: subscriberId
+          description: |
+            Identifier for the new database entry.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: |
+          The complete subscription object returned by the client's
+          push notification subscription interface.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                expirationTime:
+                  type: string
+                keys:
+                  type: object
+                  properties:
+                    p256dh:
+                      type: string
+                    auth:
+                      type: string
+      responses:
+        200:
+          description: |
+            Success.
+            The push notification subscriptionObject was added to the
+            plugin's database.
+        400:
+          description: |
+            Bad request.
+            Either subscriberId or subscriptionObject were missing or
+            invalid.
+        500:
+          description: |
+            Error.
+            The server was unable to service the request.
+        503:
+          description: |
+            The plugin's database manager declined the request to save
+            the supplied data.
+  /unsubscribe/{subscriberId}:
+    delete:
+      description: |
+        Delete a push notification subscription from the plugin's
+        database.
+      parameters:
+        - in: path
+          name: subscriberId
+          description: |
+            Identifier for the database entry to be deleted.
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: |
+            Success.
+            The push notification subscription associated with
+            subscriberId was deleted from the plugin's database.
+        404:
+          description: |
+            Not found.
+            The push notification subscription associated with subscriberId
+            was not found in the plugin's database.
+        500:
+          description: |
+            Error.
+            The server was unable to service the request.
+  /vapid:
+    get:
+      description: |
+        Get VAPID public data.
+      responses:
+        200:
+          description: |
+            Success.
+            The body of the response contains the public VAPID data
+            used by the server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicKey:
+                    type: string
+                  subject:
+                    type: string
+        500:
+          description: |
+            Error.
+            The server was unable to service the request.
+  /push/{subscriberId}:
+    patch:
+      description: |
+        Push a notification to a subscriber.
+      parameters:
+        - in: path
+          name: subscriberId
+          description: |
+            Identifier of the database entry of the subscriber who should
+            be notified.
+          schema:
+            type: string
+          required: true
+      requestBody:
+        description: |
+          Signal K notification object.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                method:
+                  type: array
+                  items:
+                    type: string
+                message:
+                  type: string
+      responses:
+        200:
+          description: |
+            Success.
+            A message or web-push notification has been sent to identified
+            subscriber.
+        400:
+          description: |
+            Bad request.
+            The subscriber identifier and/or notification object were missing
+            or invalid.
+        500:
+          description: |
+            Error.
+            The server was unable to service the request.

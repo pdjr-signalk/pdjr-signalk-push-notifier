@@ -1,0 +1,72 @@
+<http>
+    <html>
+        <head>
+            <title></title>
+            <script type="text/javascript" src="index.js"></script>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+        </head>
+        <body>
+            <div style="width: 50%; margin: auto; background: #d0d0ff; padding: 10px;">
+                <div>
+                    <h3>push-notifier plugin - email & web-push registration</H3>
+                    <p style="font-weight: bold;">
+                    This page allows you to subscribe to email and web-push
+                    notification services so that you will receive a message
+                    and/or push notification when selected alarm notifications
+                    appear in Signal K.
+                    </p>
+                    <p style="font-style: italic;">
+                    Note that both of these services require configuration in
+                    Signal K and may require some measure of Internet
+                    connectivity to operate.
+                    See
+                    <a href="https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme">here</a>
+                    for more information.
+                    </p>
+                </div>
+                <div style="background: #e0e0ff; padding: 4px;">
+                    <h4>Email subscription/unsubscription</h4>
+                    <p>
+                    Enter your email address into both text input fields and
+                    click the appropriate button.
+                    </p>
+                    <p>
+                    <input id="email-address1-text" type="text">
+                    <input id="email-address2-text" type="text">
+                    </p>
+                    <p>
+                    <button id="email-subscribe-button" class="btn btn-primary"> Subscribe </button>&nbsp;
+                    <button id="email-unsubscribe-button" class="btn btn-primary"> Unubscribe </button>
+                    <button id="email-test-button" class="btn btn-primary" style="float: right;"> Test </button>
+                    </p>
+                </div>
+                <div style="background: #e0e0ff; padding: 4px; margin-top: 10px;">
+                    <h4>Web-push subscription/unsubscription</h4>
+                    <div id="webpush-enabled-text">
+                        <p>
+                        Click the appropriate button.
+                        </p>
+                        <p style="font-style: italic;">
+                        Note that you will be required to authorise web-push
+                        subscription in your web-browser and a subscription must
+                        be made on every device on which you wish to enable this
+                        service.
+                        </p>
+                    </div>
+                    <div id="webpush-disabled-text">
+                        <p>
+                        Web-push registration is disabled because it was not
+                        possible to obtain the required VAPID public key
+                        from the server.
+                        </p>
+                    </div>
+                    <p>
+                    <button id="webpush-subscribe-button" class="btn btn-primary" style="width: 30%; margin-top: 3px;" disabled>Subscribe</button>&nbsp;
+                    <button id="webpush-unsubscribe-button" class="btn btn-primary" style="width: 30%; margin-top: 3px;" disabled>Unsubscribe</button>&nbsp;
+                    <button id="webpush-test-button" class="btn btn-primary" style="width: 30%; margin-top: 3px;" disabled>Test</button>
+                    </p>
+                </div>
+            </div>
+        </body>
+    </html>
+</http>

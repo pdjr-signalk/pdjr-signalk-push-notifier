@@ -1,0 +1,208 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HTTP API for pdjr-skplugin-push-notifier",
+    "version": "1.0.0",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "description": "[pdjr-skplugin-push-notifier](https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier)\nis a plugin for the\n[Signal K node server](https://github.com/SignalK/signalk-server).\n\nA Signal K server hosting the plugin will present this API under\nthe root https://*server_ip*:*server_port*/plugins/push-notifier.\n"
+  },
+  "externalDocs": {
+    "description": "Plugin README document",
+    "url": "https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme"
+  },
+  "paths": {
+    "/keys": {
+      "get": {
+        "description": "Get a JSON array containing all the Signal K keys that are\ncurrently being monitored by the plugin.\n",
+        "responses": {
+          "200": {
+            "description": "Success.\nThe response body contains a JSON string array where\neach item is a Signal K data path.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error.\nThe server was unable to service the request.\n"
+          }
+        }
+      }
+    },
+    "/subscribe/{subscriberId}": {
+      "post": {
+        "description": "Add a push notification subscription to the plugin database.\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscriberId",
+            "description": "Identifier for the new database entry.\n",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The complete subscription object returned by the client's\npush notification subscription interface.\n",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string"
+                  },
+                  "expirationTime": {
+                    "type": "string"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string"
+                      },
+                      "auth": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.\nThe push notification subscriptionObject was added to the\nplugin's database.\n"
+          },
+          "400": {
+            "description": "Bad request.\nEither subscriberId or subscriptionObject were missing or\ninvalid.\n"
+          },
+          "500": {
+            "description": "Error.\nThe server was unable to service the request.\n"
+          },
+          "503": {
+            "description": "The plugin's database manager declined the request to save\nthe supplied data.\n"
+          }
+        }
+      }
+    },
+    "/unsubscribe/{subscriberId}": {
+      "delete": {
+        "description": "Delete a push notification subscription from the plugin's\ndatabase.\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscriberId",
+            "description": "Identifier for the database entry to be deleted.\n",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.\nThe push notification subscription associated with\nsubscriberId was deleted from the plugin's database.\n"
+          },
+          "404": {
+            "description": "Not found.\nThe push notification subscription associated with subscriberId\nwas not found in the plugin's database.\n"
+          },
+          "500": {
+            "description": "Error.\nThe server was unable to service the request.\n"
+          }
+        }
+      }
+    },
+    "/vapid": {
+      "get": {
+        "description": "Get VAPID public data.\n",
+        "responses": {
+          "200": {
+            "description": "Success.\nThe body of the response contains the public VAPID data\nused by the server.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "publicKey": {
+                      "type": "string"
+                    },
+                    "subject": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error.\nThe server was unable to service the request.\n"
+          }
+        }
+      }
+    },
+    "/push/{subscriberId}": {
+      "patch": {
+        "description": "Push a notification to a subscriber.\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscriberId",
+            "description": "Identifier of the database entry of the subscriber who should\nbe notified.\n",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "description": "Signal K notification object.\n",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  },
+                  "method": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success.\nA message or web-push notification has been sent to identified\nsubscriber.\n"
+          },
+          "400": {
+            "description": "Bad request.\nThe subscriber identifier and/or notification object were missing\nor invalid.\n"
+          },
+          "500": {
+            "description": "Error.\nThe server was unable to service the request.\n"
+          }
+        }
+      }
+    }
+  }
+}
