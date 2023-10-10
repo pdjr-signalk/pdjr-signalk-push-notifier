@@ -44,7 +44,7 @@ module.exports = class Webpush {
   }
 
   send(pushNotification, subscriptions, onFailure) {
-    if (this.debug) this.debug("Webpush.send(%s, %s)...", JSON.stringify(pushNotification), JSON.stringify(subscribers));
+    if (this.debug) this.debug("Webpush.send(%s, %s)...", JSON.stringify(pushNotification), JSON.stringify(subscriptions));
     if ((pushNotification) && (subscriptions) && (Array.isArray(subscriptions))) {
       subscriptions.forEach(subscription => {
         const subscriberId = subscription.endpoint.slice(-8);

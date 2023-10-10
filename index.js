@@ -96,29 +96,7 @@ const PLUGIN_SCHEMA = {
           }
         }
       },
-      "default": {
-        "email": {
-          "methods": "",
-          "server": {
-            "hostname": "",
-            "port": 25,
-            "useSSL": true,
-            "user": "",
-            "password": ""
-          },
-          "sender": ""
-        },
-        "webpush": {
-          "methods": "",
-          "server": {
-            "vapid": {
-              "privateKey": "",
-              "publicKey": "",
-              "subject": ""
-            }
-          }
-        }
-      }
+      "default": {}
     }
   }
 };
