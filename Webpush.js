@@ -18,9 +18,9 @@ const webpush = require("web-push");
 
 module.exports = class Webpush {
 
-  constructor(options={}, debug) {
-    if (debug) debug("Webpush.constructor(%s)...", JSON.stringify(options));
-    this.options = options;
+  constructor(transportOptions, debug) {
+    if (debug) debug("Webpush.constructor(%s)...", JSON.stringify(transportOptions));
+    this.transportOptions = transportOptions || { vapid: {} };
     this.debug = debug;
   }
   
@@ -30,29 +30,28 @@ module.exports = class Webpush {
    * .publicKey - VAPID public key
    * .subject - VAPID subject
    */
-  setVapid(properties = {}) {
+  setVapid(vapid) {
     if (this.debug) this.debug("Webpush.setVapid(%s)...", JSON.stringify(properties));
-    if (!this.options.vapid) this.options.vapid = {};
-    if (properties.privateKey) this.options.vapid.privateKey = properties.privateKey;
-    if (properties.publicKey) this.options.vapid.publicKey = properties.publicKey;
-    if (properties.subject) this.options.vapid.subject = properties.subject;
+    if (vapid.privateKey) this.transportOptions.vapid.privateKey = vapid.privateKey;
+    if (vapid.publicKey) this.transportOptions.vapid.publicKey = vapid.publicKey;
+    if (vapid.subject) this.transportOptions.vapid.subject = vapid.subject;
   }
 
   getVapid() {
     if (this.debug) this.debug("Webpush.getVapid()...");
-    return(this.options.vapid);
+    return(this.transportOptions.vapid);
   }
 
   send(pushNotification, subscriptions, onFailure) {
     if (this.debug) this.debug("Webpush.send(%s, %s)...", JSON.stringify(pushNotification), JSON.stringify(subscriptions));
-    if ((pushNotification) && (subscriptions) && (Array.isArray(subscriptions))) {
+    if ((this.transportOptions.vapid) && (pushNotification) && (subscriptions) && (Array.isArray(subscriptions))) {
       subscriptions.forEach(subscription => {
         const subscriberId = subscription.endpoint.slice(-8);
         try {
           webpush.sendNotification(
             subscription,
             JSON.stringify(pushNotification),
-            { TTL: 10000, vapidDetails: this.options.vapid }
+            { TTL: 10000, vapidDetails: this.transportOptions.vapid }
           ).then(r => {
             switch (r.statusCode) {
               case 201:

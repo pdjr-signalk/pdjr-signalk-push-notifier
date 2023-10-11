@@ -154,16 +154,20 @@ module.exports = function (app) {
             try {
               const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
               plugin.email = new Email(transportOptions, { from: plugin.options.services.email.sender }, app.debug);
+              log.N("email servce initialised", false);
             } catch(e) { app.debug("error initialising email transport (%s)", e.message); }
           } else log.W("email service disabled (not configured)", false);
 
           // Attempt to create Webpush instance used to send web-push notifications.
           if (plugin.options.services.webpush) {
-            try {
-              const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
-              plugin.webpush = new Webpush(transportOptions, app.debug);
-              plugin.webpush.setVapid({ privateKey: process.env.VAPID_PRIVATE_KEY, publicKey: process.env.VAPID_PUBLIC_KEY, subject: process.env.VAPID_SUBJECT });
-            } catch(e) { app.debug("error initialising webpush transport (%s)", e.message); }
+            var transportOptions = null;
+            if (plugin.options.services.webpush.transportOptions) {
+              transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
+            } else {
+              transportOptions = { vapid: { privateKey: process.env.VAPID_PRIVATE_KEY, publicKey: process.env.VAPID_PUBLIC_KEY, subject: process.env.VAPID_SUBJECT } };
+            }
+            plugin.webpush = new Webpush(transportOptions, app.debug);
+            log.N("web-push service initialised");
           } else log.W("web-push service disabled (not configured)", false);
 
           // We must have at least one service.
@@ -275,14 +279,14 @@ module.exports = function (app) {
     return(retval);
   }
  
-  function createPushNotificationFromNotification(notification, path="") {
+  function createPushNotificationFromNotification(notification, path) {
     var pushNotification = null;
     const timestamp = Math.floor(new Date().getTime() / 1000)
-    if ((path) && (notification)) {
+    if (notification) {
       pushNotification = {
-        title: notification.state.toUpperCase() + " on " + path,
+        title: notification.state.toUpperCase() + " notification" + ((path)?(" on " + path):""),
         options: {
-          id: path,
+          id: path || "",
           body: notification.message + "\nIssued on " + (new Date()),
           timestamp: Date.now()
         }
@@ -316,7 +320,7 @@ module.exports = function (app) {
     try {
       switch (req.path.slice(0, (req.path.indexOf('/', 1) == -1)?undefined:req.path.indexOf('/', 1))) {
         case '/keys':
-          expandPaths(plugin.options.paths).then((expandedPaths) => {
+          sanitizePaths(plugin.options.paths).then((expandedPaths) => {
             expressSend(res, 200, expandedPaths, req.path);
           }).catch((e) => {
             throw new Error("500");
@@ -357,25 +361,31 @@ module.exports = function (app) {
           }
           break;
         case '/vapid':
-          expressSend(res, 200, { "publicKey": plugin.webpush.getVapid().publicKey, "subject": plugin.webpush.getVapid().subject }, res.path);
+          if (plugin.webpush) {
+            var vapid = plugin.webpush.getVapid();
+            if ((vapid) && (vapid.publicKey) && (vapid.subject)) {
+              expressSend(res, 200, { "publicKey": vapid.publicKey, "subject": vapid.subject }, res.path);
+            } else throw new Error("404");
+          } else throw new Error("500");
           break;
         case '/push':
           subscriberId = req.params.subscriberId;
-          app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => { 
-            console.log("Resource list: %s", resources);
-            const subscribers = Object.keys(resources).filter(key => (key == subscriberId)).map(key => ((subscriberId.includes("@"))?key:resources[key]));
-            console.log("Matched resource list: %s", subscribers);
-            if ((subscribers.length == 1) && (req.body)) {
-              if (subscriberId.includes("@")) {
-                plugin.email.send({ ...createMessageFromNotification(req.body, null), ...{ to: subscribers } });
-              } else {
-                plugin.webpush.send(createPushNotificationFromNotification(req.body), subscribers);  
-              }
-              expressSend(res, 200, null, req.path);
-            } else throw new Error("400");
-          }).catch((e) => {
-            throw new Error("400");
-          });
+          notification = req.body;
+          // If we have a valid notification...
+          if ((typeof notification === 'object') && (notification.state) && (notification.method) && (notification.message)) {
+            app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => {
+              // Try to get subscription (email address or web-push subscription) for specified subscriber...
+              const subscriptions = Object.keys(resources).filter(key => (key == subscriberId)).map(key => ((subscriberId.includes("@"))?key:resources[key].subscription));
+              if (subscriptions.length == 1) {
+                if (subscriberId.includes("@")) {
+                  plugin.email.send({ ...createMessageFromNotification(notification, null), ...{ to: subscriptions } });
+                } else {
+                  plugin.webpush.send(createPushNotificationFromNotification(notification), subscriptions);  
+                }
+                expressSend(res, 200, null, req.path);
+              } else throw new Error("404");
+            }).catch((e) => { throw new Error("500"); });
+          } else throw new Error("400");
           break;
       }
     } catch(e) {
