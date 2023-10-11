@@ -1,13 +1,15 @@
 var VAPID_PUBLIC_KEY = null;
 
-window.onload = function(){
+window.onload = function() {
 
   const emailSubscribeButton = document.getElementById('email-subscribe-button');
   const emailUnsubscribeButton = document.getElementById('email-unsubscribe-button');
   const emailTestButton = document.getElementById('email-test-button');
+  const emailPanel = document.getElementById('email-panel')
   const webpushSubscribeButton = document.getElementById('webpush-subscribe-button');
   const webpushUnsubscribeButton = document.getElementById('webpush-unsubscribe-button');
   const webpushTestButton = document.getElementById('webpush-test-button')
+  const webpushPanel = document.getElementById('webpush-panel');
  
   emailSubscribeButton.addEventListener('click', emailSubscribeButtonHandler);
   emailUnsubscribeButton.addEventListener('click', emailUnsubscribeButtonHandler);
@@ -16,25 +18,50 @@ window.onload = function(){
   webpushUnsubscribeButton.addEventListener('click', webpushUnsubscribeButtonHandler);
   webpushTestButton.addEventListener('click', webpushTestButtonHandler);
 
+  var options = null;
+
   try {
-    fetch('/plugins/push-notifier/vapid', { method: 'GET' }).then((response) => {
+    fetch('/plugins/push-notifier/config', { method: 'GET' }).then((response) => {
       if ((response) && (response.status == 200)) {
-        response.json().then((responseObject) => {
-          if (responseObject) {
-            VAPID_PUBLIC_KEY = responseObject.publicKey;
-            console.log(VAPID_PUBLIC_KEY);
-            if (registerServiceWorker()) {
-              webpushEnable(true);
-              webpushSubscribeButton.disabled = false;
-            } else throw new Error("error registering service worker");
-          } else throw new Error("invalid response object");
-        })
-      } else throw new Error("invalid server response");
-    })
-  } catch (e) {
-    alert("Web-push subscription has been disabled because the plugin failed to supply required VAPID key (%s).", e.message);
-    webpushEnable(false);
-  };
+        response.json().then((responseJSON) => {
+          options = responseJSON.configuration;
+          console.log(options);
+
+          if (!options.services.email) emailPanel.className = "dimmed";
+          if (!options.services.webpush) webpushPanel.className = "dimmed";
+/*
+          if (options.webpush) {
+            fetch('/plugins/push-notifier/vapid', { method: 'GET' }).then((response) => {
+              if ((response) && (response.status == 200)) {
+                response.json().then((responseObject) => {
+                  if (responseObject) {
+                    VAPID_PUBLIC_KEY = responseObject.publicKey;
+                    console.log(VAPID_PUBLIC_KEY);
+                    if (registerServiceWorker()) {
+                      webpushEnable(true);
+                      webpushSubscribeButton.disabled = false;
+                    } else throw new Error("error registering service worker");
+                  } else throw new Error("invalid response object");
+                })
+              } else throw new Error("invalid server response");
+            })
+          } catch (e) {
+            alert("Web-push subscription has been disabled because the plugin failed to supply required VAPID key (%s).", e.message);
+            webpushEnable(false);
+          };
+        
+            webpushPanelDisabled.style.display = 'none';
+
+          } else {
+            webpushPanelDisabled.style.display = 'block';
+          }
+*/
+        });
+      }
+    });
+  } catch(e) {
+    
+  }
 };
 
 async function emailSubscribeButtonHandler() {
