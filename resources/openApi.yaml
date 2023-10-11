@@ -181,6 +181,11 @@ paths:
             Bad request.
             The subscriber identifier and/or notification object were missing
             or invalid.
+        404:
+          description: |
+            Not found.
+            The identified subscriber was not found in the subscriber
+            databse. 
         500:
           description: |
             Error.

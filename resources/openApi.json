@@ -198,6 +198,9 @@
           "400": {
             "description": "Bad request.\nThe subscriber identifier and/or notification object were missing\nor invalid.\n"
           },
+          "404": {
+            "description": "Not found.\nThe identified subscriber was not found in the subscriber\ndatabse. \n"
+          },
           "500": {
             "description": "Error.\nThe server was unable to service the request.\n"
           }

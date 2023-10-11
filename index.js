@@ -154,7 +154,7 @@ module.exports = function (app) {
             try {
               const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
               plugin.email = new Email(transportOptions, { from: plugin.options.services.email.sender }, app.debug);
-              log.N("email servce initialised", false);
+              log.N("email service initialised", false);
             } catch(e) { app.debug("error initialising email transport (%s)", e.message); }
           } else log.W("email service disabled (not configured)", false);
 
