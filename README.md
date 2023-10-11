@@ -60,9 +60,9 @@ K OpenAPI service.
   <dt>Monitor these paths (<code>paths</code>)</dt>
   <dd>
     <p>
-    This required a list of strings each defines the Signal K notification
-    paths that the plugin should monitor and any circumstances under which
-    the plugin should restart.
+    This required a list of strings defines the Signal K paths that the
+    plugin should monitor for notifications and any circumstances under
+    which the plugin should restart.
     </p>
     <p>
     Each item in the list can be:
