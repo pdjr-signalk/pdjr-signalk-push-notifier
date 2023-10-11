@@ -131,9 +131,9 @@ K OpenAPI service.
         </p>
         <p>
         The plugin uses
-        [nodemailer](https://nodemailer.com/)
-        as its mail user agent and some of the supplied configuration
-        data must be supplied in a format acceptable to this module.
+        <a href="https://nodemailer.com/">nodemailer</a>
+        as its mail user agent and some configuration data must be
+        supplied in a format acceptable to this module.
         </p>
         <dl>
           <dt>Methods <code>methods</code></dt>
