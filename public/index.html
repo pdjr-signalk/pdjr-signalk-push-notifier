@@ -10,8 +10,7 @@
                 }
 
                 .dimmed:before {
-                    content: "NOT AVAILABLE";
-                    color: lightgray;
+                    content: "This feature is disabled because the related service is not configured or its configuration is broken.";
                     z-index: 10;
                     display: block;
                     position: absolute;
@@ -19,7 +18,7 @@
                     top: 0;
                     left: 0;
                     right: 0;
-                    background: rgba(0, 0, 0, 0.7);
+                    background: #e0e0ff;
                 }
             </style>
         </head>
@@ -42,27 +41,30 @@
                     for more information.
                     </p>
                 </div>
-                <div id="email-panel" style="background: #e0e0ff; padding: 4px;">
+                <div style="background: #e0e0ff; padding: 4px;">
                     <h4>Email subscription/unsubscription</h4>
-                    <div>
-                            <p>
-                            Enter your email address into both text input fields and
-                            click the appropriate button.
-                            </p>
-                            <p>
-                            <input id="email-address1-text" type="text">
-                            <input id="email-address2-text" type="text">
-                            </p>
-                            <p>
-                            <button id="email-subscribe-button" class="btn btn-primary"> Subscribe </button>&nbsp;
-                            <button id="email-unsubscribe-button" class="btn btn-primary"> Unubscribe </button>
-                            <button id="email-test-button" class="btn btn-primary" style="float: right;"> Test </button>
-                            </p>
+                    <div id="email-panel">
+                        <p>
+                        Enter your email address into both text input fields and
+                        click the appropriate button.
+                        </p>
                     </div>
+                    <fieldset id="email-form">
+                        <p>
+                        <input id="email-address1-text" type="text">
+                        <input id="email-address2-text" type="text">
+                        </p>
+                        <p>
+                        <button id="email-subscribe-button" class="btn btn-primary"> Subscribe </button>&nbsp;
+                        <button id="email-unsubscribe-button" class="btn btn-primary"> Unubscribe </button>
+                        <button id="email-test-button" class="btn btn-primary" style="float: right;"> Test Subscription </button>
+                        </p>
+                        </fieldset>
+                    </fieldset>
                 </div>
-                <div id="webpush-panel" style="background: #e0e0ff; padding: 4px; margin-top: 10px;">
+                <div style="background: #e0e0ff; padding: 4px; margin-top: 10px;">
                     <h4>Web-push subscription/unsubscription</h4>
-                    <div id="webpush-enabled-text">
+                    <div id="webpush-panel">
                         <p>
                         Click the appropriate button.
                         </p>
@@ -73,18 +75,13 @@
                         service.
                         </p>
                     </div>
-                    <div id="webpush-disabled-text">
+                    <fieldset id="webpush-form">
                         <p>
-                        Web-push registration is disabled because it was not
-                        possible to obtain the required VAPID public key
-                        from the server.
+                        <button id="webpush-subscribe-button" class="btn btn-primary"> Subscribe </button>&nbsp;
+                        <button id="webpush-unsubscribe-button" class="btn btn-primary"> Unsubscribe </button>&nbsp;
+                        <button id="webpush-test-button" class="btn btn-primary" style="float: right;"> Test Subscription </button>
                         </p>
-                    </div>
-                    <p>
-                    <button id="webpush-subscribe-button" class="btn btn-primary" disabled>Subscribe</button>&nbsp;
-                    <button id="webpush-unsubscribe-button" class="btn btn-primary" disabled>Unsubscribe</button>&nbsp;
-                    <button id="webpush-test-button" class="btn btn-primary" style="float: right;" disabled>Test</button>
-                    </p>
+                    </fieldset>
                 </div>
             </div>
         </body>

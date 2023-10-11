@@ -1,11 +1,13 @@
 var VAPID_PUBLIC_KEY = null;
 
 window.onload = function() {
-
+  const emailForm = document.getElementById('email-form');
   const emailSubscribeButton = document.getElementById('email-subscribe-button');
   const emailUnsubscribeButton = document.getElementById('email-unsubscribe-button');
   const emailTestButton = document.getElementById('email-test-button');
   const emailPanel = document.getElementById('email-panel')
+
+  const webpushForm = document.getElementById('webpush-form');
   const webpushSubscribeButton = document.getElementById('webpush-subscribe-button');
   const webpushUnsubscribeButton = document.getElementById('webpush-unsubscribe-button');
   const webpushTestButton = document.getElementById('webpush-test-button')
@@ -27,10 +29,17 @@ window.onload = function() {
           options = responseJSON.configuration;
           console.log(options);
 
-          if (!options.services.email) emailPanel.className = "dimmed";
-          if (!options.services.webpush) webpushPanel.className = "dimmed";
-/*
-          if (options.webpush) {
+          if (!options.services.email) {
+            emailForm.disabled = true;
+            emailPanel.className = "dimmed";
+          } else {
+            ;
+          }
+
+          if (!options.services.webpush) {
+            webpushForm.disabled = true;
+            webpushPanel.className = "dimmed";
+          } else {
             fetch('/plugins/push-notifier/vapid', { method: 'GET' }).then((response) => {
               if ((response) && (response.status == 200)) {
                 response.json().then((responseObject) => {
@@ -44,18 +53,8 @@ window.onload = function() {
                   } else throw new Error("invalid response object");
                 })
               } else throw new Error("invalid server response");
-            })
-          } catch (e) {
-            alert("Web-push subscription has been disabled because the plugin failed to supply required VAPID key (%s).", e.message);
-            webpushEnable(false);
-          };
-        
-            webpushPanelDisabled.style.display = 'none';
-
-          } else {
-            webpushPanelDisabled.style.display = 'block';
+            });
           }
-*/
         });
       }
     });
