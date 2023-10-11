@@ -78,7 +78,7 @@ K OpenAPI service.
       <li>
         a Signal K path of the form 'restart:<em>path</em>' (for example
         <code>restart:notifications.plugins.alarm-manager.keyChange</code>):
-        a value change on this path will restart the plugin.
+        a value change on <em>path</em> will restart the plugin.
       </li>
     </ul>
   </p>
