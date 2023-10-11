@@ -306,15 +306,9 @@ to subscribe and test email notification.
    export VAPID_SUBJECT=mailto:*some email address*
    ```
 
-3. 
-
-
-4. Configure Signal K to operate using SSL (if it isn't already) by
+3. Configure Signal K to operate using SSL (if it isn't already) by
    running 'signalk-server-setup' and entering 'y' in response to the
    'Do you want to enable SSL?' prompt.
-5. Enable the plugin's push notification service by checking the
-   'Enable push notifications' property in the plugin configuration
-   screen.
 
 At this point the plugin will be able to manage subscriptions to its
 push notification service and will attept to send push notifications
@@ -332,19 +326,16 @@ server and client devices.
 This is a little clunky since client certificates have to be manually
 installed and authorised on each push notification client.
 The details of this procedure differ across operating systems and
-browsers.
+browsers, but the general approach is:
 
-6. Generate SSL keys by executing the following commands.
-   ```
-   $> cd ~ ; mkdir ssl ; cd ssl
-   $> # Generate 
+1. Generate SSL keys and certificates.
 
-   ```
-7. Install server keys in Signal K.
+2. Install server keys in Signal K by copying the necessary file
+   to the .signalk folder.
 
-8. Install client key on a Macbook Air
+8. Install client keys on required client devices.
 
-9. Install client key on an Android phone using Brave
+9. Authorise the installed client keys.
 
 Without SSL this feature is only accessible from the Signal K server
 host, but in the circumstance that you have a UI and web-browser
