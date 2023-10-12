@@ -129,7 +129,7 @@ module.exports = function (app) {
 
     
     // Must login to Signal K server to do anything.
-    const [ username, password ] = plugin.options.credentials.split(':');    
+    const [ username, password ] = plugin.options.credentials.split(':');   
     fetch("https://localhost:3443/signalk/v1/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username, password: password })}).then((response) => {
       if (response.status == 200) {
         response.json().then((body) => {
@@ -194,9 +194,11 @@ module.exports = function (app) {
                         // But only is the notification method is of interest.
                         if (notification.method.reduce((a,v) => ((plugin.options.services.email.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
                           log.N("sending message to email subscribers", false);
-                          plugin.email.send(
-                            { ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } }
-                          );
+                          try {
+                            plugin.email.send(
+                              { ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } }
+                            );
+                          } catch(e) { log.W("email send failure (%s)", e.message); }
                         }
                       }
 
@@ -205,15 +207,17 @@ module.exports = function (app) {
                         // But only is the notification method is of interest.
                         if (notification.method.reduce((a,v) => ((plugin.options.services.webpush.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
                           log.N("sending notification to web-push subscribers", false);
-                          plugin.webpush.send(
-                            createPushNotificationFromNotification(notification, path),
-                            subscribers.webpush.map(subscriber => subscriber.subscription),
-                            (sid) => handleWebpushFalure(sid, subscribers.webpush)
-                          );
+                          try {
+                            plugin.webpush.send(
+                              createPushNotificationFromNotification(notification, path),
+                              subscribers.webpush.map(subscriber => subscriber.subscription),
+                              (sid) => handleWebpushFalure(sid, subscribers.webpush)
+                            );
+                          } catch(e) { log.W("web-push send failure (%s)", e.message); }
                         }
                       }
                     }).catch((e) => {
-                      app.debug("error recovering subscriber resources (%s)", e);
+                      log.E("error recovering subscriber resources (%s)", e);
                     });
                   }
                 }));
@@ -222,7 +226,7 @@ module.exports = function (app) {
           } else log.N("stopped: no services have been initialised");
         })
       } else {
-        log.E("unable to authenticate with server");
+        log.E("stopped: unable to authenticate with server");
       }
     })
   }

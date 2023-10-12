@@ -44,6 +44,8 @@ module.exports = class Webpush {
 
   send(pushNotification, subscriptions, onFailure) {
     if (this.debug) this.debug("Webpush.send(%s, %s)...", JSON.stringify(pushNotification), JSON.stringify(subscriptions));
+
+    var sendErrorCount = 0;
     if ((this.transportOptions.vapid) && (pushNotification) && (subscriptions) && (Array.isArray(subscriptions))) {
       subscriptions.forEach(subscription => {
         const subscriberId = subscription.endpoint.slice(-8);
@@ -63,12 +65,14 @@ module.exports = class Webpush {
             }
           }).catch((e) => {
             if (this.debug) this.debug("Webpush.send: push to user '%s' failed (%s)", subscriberId, e);
+            sendErrorCount++;
           });
         } catch(e) {
           if (this.debug) this.debug("Webpush.send: push to user '%s' failed (%s)", subscriberId, e.message);
         }
       })
     }
+    if (sendErrorCount > 0) throw new Error("web-push failed to send %d notifications (%d)", sendErrorCount);
   }
 
 }
