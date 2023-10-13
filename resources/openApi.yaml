@@ -16,6 +16,43 @@ externalDocs:
   description: Plugin README document
   url: https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme 
 paths:
+  /status/{service}:
+    get:
+      description: |
+        Get a numeric indication of the current status of a push
+        service.
+      parameters:
+        - in: path
+          name: service
+          description: |
+            Name of the service whose status is required (either
+            'email' or 'webpush').
+          required: true
+          schema:
+            type: string
+            pattern: '^email|webpush$'
+      responses:
+        200:
+          description: |
+            Success.
+            0 says the specified service is not configured; 1 says it
+            is configured but not available (probably because the
+            network connection is down); 2 says it is configured
+            and working.
+          content:
+            application/json:
+              schema:
+                type: number
+                minimum: 0
+                maximum: 2
+        400:
+          description: |
+            Bad parameter.
+            The service parameter was not recognised.
+        500:
+          description: |
+            Error.
+            The server was unable to service the request.
   /keys:
     get:
       description: |

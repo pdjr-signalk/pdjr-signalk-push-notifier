@@ -136,6 +136,8 @@ module.exports = function (app) {
           // We got an authentication token and can do things.
           log.N("authenticated with server as user '%s'", plugin.id, false);
           plugin.token = body.token;
+          plugin.emailState = 0;
+          plugin.webpushState = 0;
 
           // Register listeners for any 'restart:' paths.
           plugin.options.paths.filter(path => (path.startsWith("restart:"))).forEach(path => {
@@ -173,8 +175,6 @@ module.exports = function (app) {
 
           // We must have at least one service.
           if ((plugin.email) || (plugin.webpush)) {
-            // Assume network status is OK.
-            var emailNetworkStatus = 0;
           
             // Expand and clean up our list of paths to be monitored.
             sanitizePaths(plugin.options.paths).then((expandedPaths) => {
@@ -198,8 +198,8 @@ module.exports = function (app) {
                             app.debug("sending message to email subscribers");
                             plugin.email
                               .send({ ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } })
-                              .then((r) => { if (emailNetworkStatus == 1) { emailNetworkStatus = 0; log.W("email network connection has come up") }})
-                              .catch((e) => { if (emailNetworkStatus == 0) { emailNetworkStatus = 1; log.W("email network connection has gone down") }});
+                              .then((r) => { if (plugin.emailState == 1) { plugin.emailState = 0; log.W("email network connection has come up") }})
+                              .catch((e) => { if (plugin.emailState == 0) { plugin.emailState = 1; log.W("email network connection has gone down") }});
                           }
                         }
 
@@ -241,6 +241,7 @@ module.exports = function (app) {
   } 
 
   plugin.registerWithRouter = function(router) {
+    router.get('/status/:service', handleRoutes);
     router.get('/keys', handleRoutes);
     router.post('/subscribe/:subscriberId', handleRoutes);
     router.delete('/unsubscribe/:subscriberId', handleRoutes);
@@ -327,6 +328,18 @@ module.exports = function (app) {
     var subscriberId;
     try {
       switch (req.path.slice(0, (req.path.indexOf('/', 1) == -1)?undefined:req.path.indexOf('/', 1))) {
+        case '/status':
+          switch(req.params.service) {
+            case'email':
+              expressSend(res, 200, new Number((plugin.email)?((plugin.emailState == 0)?2:1):0), req.path);
+              break;
+            case 'webpush':
+              break;
+            default:
+              throw new Error("400");
+              break;
+          }
+          break;
         case '/keys':
           sanitizePaths(plugin.options.paths).then((expandedPaths) => {
             expressSend(res, 200, expandedPaths, req.path);

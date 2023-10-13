@@ -14,6 +14,43 @@
     "url": "https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme"
   },
   "paths": {
+    "/status/{service}": {
+      "get": {
+        "description": "Get a numeric indication of the current status of a push\nservice.\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service",
+            "description": "Name of the service whose status is required (either\n'email' or 'webpush').\n",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^email|webpush$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success.\n0 says the specified service is not configured; 1 says it\nis configured but not available (probably because the\nnetwork connection is down); 2 says it is configured\nand working.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad parameter.\nThe service parameter was not recognised.\n"
+          },
+          "500": {
+            "description": "Error.\nThe server was unable to service the request.\n"
+          }
+        }
+      }
+    },
     "/keys": {
       "get": {
         "description": "Get a JSON array containing all the Signal K keys that are\ncurrently being monitored by the plugin.\n",
