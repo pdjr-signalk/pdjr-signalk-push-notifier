@@ -126,7 +126,6 @@ module.exports = function (app) {
     plugin.options.subscriberDatabase = { ...plugin.schema.properties.subscriberDatabase.default, ...options.subscriberDatabase };
     plugin.options.services = options.services || plugin.schema.properties.services.default;
     app.debug("using configuration: %s", JSON.stringify(plugin.options, null, 2));
-
     
     // Must login to Signal K server to do anything.
     const [ username, password ] = plugin.options.credentials.split(':');   
@@ -154,24 +153,28 @@ module.exports = function (app) {
             try {
               const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
               plugin.email = new Email(transportOptions, { from: plugin.options.services.email.sender }, app.debug);
-              log.N("email service initialised", false);
-            } catch(e) { app.debug("error initialising email transport (%s)", e.message); }
-          } else log.W("email service disabled (not configured)", false);
+              log.N("email service configured");    
+            } catch(e) { app.debug("error configuring email transport (%s)", e.message); }
+          }
 
           // Attempt to create Webpush instance used to send web-push notifications.
           if (plugin.options.services.webpush) {
-            var transportOptions = null;
-            if (plugin.options.services.webpush.transportOptions) {
-              transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
-            } else {
-              transportOptions = { vapid: { privateKey: process.env.VAPID_PRIVATE_KEY, publicKey: process.env.VAPID_PUBLIC_KEY, subject: process.env.VAPID_SUBJECT } };
-            }
-            plugin.webpush = new Webpush(transportOptions, app.debug);
-            log.N("web-push service initialised");
-          } else log.W("web-push service disabled (not configured)", false);
+            try {
+              var transportOptions = null;
+              if (plugin.options.services.webpush.transportOptions) {
+                transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
+              } else {
+                transportOptions = { vapid: { privateKey: process.env.VAPID_PRIVATE_KEY, publicKey: process.env.VAPID_PUBLIC_KEY, subject: process.env.VAPID_SUBJECT } };
+              }
+              plugin.webpush = new Webpush(transportOptions, app.debug);
+              log.N("web-push service configured");
+            } catch(e) { app.debug("error configuring web-push transport (%s)", e.message); }
+          }
 
           // We must have at least one service.
           if ((plugin.email) || (plugin.webpush)) {
+            // Assume network status is OK.
+            var emailNetworkStatus = 0;
           
             // Expand and clean up our list of paths to be monitored.
             sanitizePaths(plugin.options.paths).then((expandedPaths) => {
@@ -181,60 +184,61 @@ module.exports = function (app) {
               expandedPaths.forEach(path => {
                 const stream = app.streambundle.getSelfStream("notifications." + path);
                 unsubscribes.push(stream.onValue((notification) => {
-
                   // Handle any received notifications.
                   if ((notification) && (notification.method)) {
 
                     // Get the subscriber list and separate out email and web-push subscribers.
                     app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => {
                       const subscribers = Object.keys(resources).reduce((a,k) => { if (k.includes('@')) a.email.push(k); if (!k.includes('@')) a.webpush.push(resources[k]); return(a); }, { email: [], webpush: [] });
-                    
-                      // If email is configured and we have subscribers then maybe we send a message.
-                      if ((plugin.email) && (subscribers.email.length > 0)) {
-                        // But only is the notification method is of interest.
-                        if (notification.method.reduce((a,v) => ((plugin.options.services.email.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
-                          log.N("sending message to email subscribers", false);
-                          try {
-                            plugin.email.send(
-                              { ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } }
-                            );
-                          } catch(e) { log.W("email send failure (%s)", e.message); }
+                      //if (internetAvailable()) {
+                        // If email is configured and we have subscribers then maybe we send a message.
+                        if ((plugin.email) && (subscribers.email.length > 0)) {
+                          // But only is the notification method is of interest.
+                          if (notification.method.reduce((a,v) => ((plugin.options.services.email.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
+                            app.debug("sending message to email subscribers");
+                            plugin.email
+                              .send({ ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } })
+                              .then((r) => { if (emailNetworkStatus == 1) { emailNetworkStatus = 0; log.W("email network connection has come up") }})
+                              .catch((e) => { if (emailNetworkStatus == 0) { emailNetworkStatus = 1; log.W("email network connection has gone down") }});
+                          }
                         }
-                      }
 
-                      // If web-push is configured and we have subscribers then maybe send a push notification.
-                      if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
-                        // But only is the notification method is of interest.
-                        if (notification.method.reduce((a,v) => ((plugin.options.services.webpush.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
-                          log.N("sending notification to web-push subscribers", false);
-                          try {
-                            plugin.webpush.send(
-                              createPushNotificationFromNotification(notification, path),
-                              subscribers.webpush.map(subscriber => subscriber.subscription),
-                              (sid) => handleWebpushFalure(sid, subscribers.webpush)
-                            );
-                          } catch(e) { log.W("web-push send failure (%s)", e.message); }
+                        // If web-push is configured and we have subscribers then maybe send a push notification.
+                        if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
+                          // But only is the notification method is of interest.
+                          if (notification.method.reduce((a,v) => ((plugin.options.services.webpush.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
+                            app.debug("sending notification to web-push subscribers");
+                            try {
+                              plugin.webpush.send(
+                                createPushNotificationFromNotification(notification, path),
+                                subscribers.webpush.map(subscriber => subscriber.subscription),
+                                (sid) => handleWebpushFalure(sid, subscribers.webpush)
+                              );
+                            } catch(e) { log.W("web-push send failure (%s)", e.message); }
+                          }
                         }
-                      }
+                      //} else {
+                      //  log.W("cannot send notification (no Internet connection)", false);
+                      //}
                     }).catch((e) => {
-                      log.E("error recovering subscriber resources (%s)", e);
+                      log.E("error recovering subscriber resources (%s)", e,false);
                     });
                   }
                 }));
               });
-            })
+            }).catch((e) => {
+              ;
+            });
           } else log.N("stopped: no services have been initialised");
-        })
-      } else {
-        log.E("stopped: unable to authenticate with server");
-      }
-    })
+        }).catch((e) => { log.E("authentication server response could not be parsed"); })
+      } else { log.E("host authentication service denied login attempt by user '%s'", username); }
+    }).catch((e) => { log.E("cannot contact host authentication service"); })        
   }
 
   plugin.stop = function() {
 	  unsubscribes.forEach(f => f());
     unsubscribes = [];
-  }
+  } 
 
   plugin.registerWithRouter = function(router) {
     router.get('/keys', handleRoutes);

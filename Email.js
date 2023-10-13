@@ -18,6 +18,14 @@ var nodemailer = require("nodemailer");
 
 module.exports = class Email {
 
+  /**
+   * Create a new Email instance using supplied nodemailer
+   * conffiguration options.
+   * 
+   * @param {*} transportOptions - for createTransport().
+   * @param {*} messageOptions - will be merged with options passed to sendMail().
+   * @param {*} debug - client debug function.
+   */
   constructor(transportOptions, messageOptions, debug) {
     if (debug) debug("Email.constructor(%s,%s)...", JSON.stringify(transportOptions), JSON.stringify(messageOptions));
     this.transportOptions = transportOptions;
@@ -26,14 +34,13 @@ module.exports = class Email {
     this.debug = debug;
   }
 
-  send(options) {
+  /**
+   * Call sendEmail using the specified options.
+   * @param {*} options 
+   * @returns 
+   */
+  async send(options={}) {
     if (this.debug) this.debug("Email.send(%s)...", JSON.stringify(options));
-    if (!Array.isArray(options.recipients)) options.recipients = [options.recipients];
-    if (!Array.isArray(options.ccrecipients)) options.ccrecipients = [options.ccrecipients];
-
-    this.transporter.sendMail(options, (error, info) => {
-      if (error) throw new Error(error);
-    });
+    return(await this.transporter.sendMail(options));
   }
-
 }
