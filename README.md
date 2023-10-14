@@ -19,7 +19,7 @@ If email messaging is configured, then the plugin will periodically
 verify and report in the Signal K dashboard its ability to connect to
 the MSA.
 An instantaneous report of this connection state is also available
-over the HTTP API.
+over the plugin's HTTP API.
 
 Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509
