@@ -77,6 +77,10 @@ const PLUGIN_SCHEMA = {
             "messageOptions": {
               "title": "Nodemailer message options",
               "type": "string"
+            },
+            "connectionCheckInterval": {
+              "title": "Connection check interval (m)",
+              "type": "number"
             }
           }
         },
@@ -182,14 +186,14 @@ module.exports = function (app) {
 
               // Maybe check WAN connection
               log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), WAN_STATE);
-              if (plugin.email) {
+              if ((plugin.email) && (plugin.options.services.email.connectionCheckInterval) && (plugin.options.services.email.connectionCheckInterval > 0)) {
                 WAN_STATE = 'unknown';
                 (function loop() {
                   plugin.email.getTransporter().verify((e,s) => {
                     WAN_STATE = (e)?"down":"up";
                     log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), WAN_STATE);
                   });
-                  intervalId = setTimeout(() => { loop(); }, (VERIFY_WAN_CONNECTION_INTERVAL * 1000));
+                  intervalId = setTimeout(() => { loop(); }, (plugin.options.services.email.connectionCheckInterval * 60000));
                 })();
               }
 

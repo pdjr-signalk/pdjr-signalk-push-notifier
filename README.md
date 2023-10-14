@@ -183,7 +183,17 @@ K OpenAPI service.
             This is most useful for specifying the 'from' address to
             be used in outgoing messages.
             Omitting this property prevents messages being sent whilst
-            still allowing WAN connectivity checking.
+            still allowing connectivity checking (see below).
+            </p>
+          </dd>
+          <dt>Connection check interval (m) <code>connectionCheckInterval</code></dt>
+          <dd>
+            <p>
+            Number specifying whether or not to  perform periodic
+            connection checks against the mail server specified
+            by <code>transportOptions</code>.
+            Zero says never check; <em>n</em> says check every <em>n</em>
+            minutes.
             </p>
           </dd>
         </dl>
