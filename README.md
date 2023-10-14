@@ -9,17 +9,20 @@ either email or web-push and to be in any way useful requires an
 operating environment that supports at least intermittent Internet
 connectivity.
 
-Email messaging requires that the Signal K server has access to an
-SMTP mail submssion agent (MSA).
+Email messaging requires that the Signal K server has access to a
+mail submssion agent (MSA) of some sort, most probably one that
+offers a standard SMTP submission service.
+
+In addition to sending emails the plugin can perform periodic and/or
+ad-hoc connection checks against the MSA.
+If, as will normally be the case, your MSA is located out on the
+Internet somewhere then these checks provide verification of WAN/
+Internet availability.
+
 The plugin uses
 [nodemailer](https://nodemailer.com/)
 as its mail user agent (MUA) and so works happily with most popular
-Internet mail services.
-If email messaging is configured, then the plugin will periodically
-verify and report in the Signal K dashboard its ability to connect to
-the MSA.
-An instantaneous report of this connection state is also available
-over the plugin's HTTP API.
+email submission services.
 
 Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509
@@ -194,6 +197,9 @@ K OpenAPI service.
             by <code>transportOptions</code>.
             Zero says never check; <em>n</em> says check every <em>n</em>
             minutes.
+            Note that even with periodic connection checking disabled it is
+            still possible to perform an ad-hoc connection check using the
+            plugin's HTTP API '/status' URL.
             </p>
           </dd>
         </dl>
