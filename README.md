@@ -378,18 +378,10 @@ to authenticate one-another using SSL.
 
 ## Operating principle
 
-The plugin monitors all selected keys in the Signal K tree which have
-an associated metadata object that contains a 'zones' property and
-which are therefore able to support alarm function.
-
-The plugin waits for values to appear on each key and checks these
-against the associated metadata alarm zones configuration: if the key
-value falls within an alarm zone then a notification will be issued on
-the path 'notifications.*key*' using the rules defined in the *key*'s
-metadata zones property.
-
-Each time a notification is issued the alarm digest and any specified
-output channel states are updated.
+The plugin monitors the configured Signal K paths for the appearance
+of an alarm notification and, if the raised notification has a method
+value which is trapped by a push notification service then the
+notification is forwarded to all users subscribed to that service.
 
 ## Author
 
