@@ -34,6 +34,14 @@ module.exports = class Email {
     this.debug = debug;
   }
 
+  getTransporter() {
+    return(this.transporter);
+  }
+
+  getMessageOptions() {
+    return(this.messageOptions);
+  }
+
   async verify() {
     if (this.debug) this.debug("Email.verify()...");
     return(await this.transporter.verify());

@@ -15,9 +15,11 @@ The plugin uses
 [nodemailer](https://nodemailer.com/)
 as its mail user agent (MUA) and so works happily with most popular
 Internet mail services.
-If email messaging is configured, then the plugin can be set to
-verify and report Internet connection state by periodically checking
-the availability of the MSA.
+If email messaging is configured, then the plugin will periodically
+verify and report in the Signal K dashboard its ability to connect to
+the MSA.
+An instantaneous report of this connection state is also available
+over the HTTP API.
 
 Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509
@@ -138,6 +140,13 @@ K OpenAPI service.
         as its mail user agent and some configuration data must be
         supplied in a format acceptable to this module.
         </p>
+        <p>
+        Note that if the ```transportOptions``` property is supplied
+        but the ```messageOptions``` property is omitted then the
+        plugin will be able to report the validity of the connection
+        to the MSA, but will not send any email messages: this allows
+        provides a mechanism for checking WAN connectivity without
+        sending push notifications. 
         <dl>
           <dt>Methods <code>methods</code></dt>
           <dd>
@@ -173,6 +182,8 @@ K OpenAPI service.
             <code>nodemailer.transporter.sendMail()</code>.
             This is most useful for specifying the 'from' address to
             be used in outgoing messages.
+            Omitting this property prevents messages being sent whilst
+            still allowing WAN connectivity checking.
             </p>
           </dd>
         </dl>

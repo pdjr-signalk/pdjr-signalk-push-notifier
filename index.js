@@ -77,10 +77,6 @@ const PLUGIN_SCHEMA = {
             "messageOptions": {
               "title": "Nodemailer message options",
               "type": "string"
-            },
-            "verifyConnectionInterval": {
-              "title": "Verify connection interval (s)",
-              "type": "number"
             }
           }
         },
@@ -105,12 +101,13 @@ const PLUGIN_SCHEMA = {
   }
 };
 const PLUGIN_UISCHEMA = {};
+const VERIFY_WAN_CONNECTION_INTERVAL = 60;
 
 module.exports = function (app) {
   var plugin = {};
   var unsubscribes = [];
   var intervalId = undefined;
-  var WAN_STATE = 'unknown';
+  var WAN_STATE = 'unknowable';
 
   plugin.id = PLUGIN_ID;
   plugin.name = PLUGIN_NAME;
@@ -157,7 +154,8 @@ module.exports = function (app) {
           if (plugin.options.services.email) {
             try {
               const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
-              plugin.email = new Email(transportOptions, { from: plugin.options.services.email.sender }, app.debug);
+              const messageOptions = (plugin.options.services.email.messageOptions)?JSON.parse(plugin.options.services.email.messageOptions):null;
+              plugin.email = new Email(transportOptions, messageOptions, app.debug);
               log.N("email service configured");  
             } catch(e) { app.debug("error configuring email transport (%s)", e.message); }
           }
@@ -176,20 +174,24 @@ module.exports = function (app) {
             } catch(e) { app.debug("error configuring web-push transport (%s)", e.message); }
           }
 
-          intervalId = setInterval(() => {
-            if (plugin.options.services.email.verifyConnectionInterval == 0) {
-              WAN_STATE = 'unknowable';
-            } else {
-              plugin.email.verify().then((r) => { WAN_STATE = "up"; }).catch((e) => { WAN_STATE = "down"; });
-            }
-            log.N("listening on %d notification path%s (WAN state is '%s')", (unsubscribes.length - 1), (((unsubscribes.length - 1) == 0)?"s":""), WAN_STATE);
-          }, (plugin.options.services.email.verifyConnectionInterval * 1000));
-
           // We must have at least one service.
           if ((plugin.email) || (plugin.webpush)) {
           
             // Expand and clean up our list of paths to be monitored.
             sanitizePaths(plugin.options.paths).then((expandedPaths) => {
+
+              // Maybe check WAN connection
+              log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), WAN_STATE);
+              if (plugin.email) {
+                WAN_STATE = 'unknown';
+                (function loop() {
+                  plugin.email.getTransporter().verify((e,s) => {
+                    WAN_STATE = (e)?"down":"up";
+                    log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), WAN_STATE);
+                  });
+                  intervalId = setTimeout(() => { loop(); }, (VERIFY_WAN_CONNECTION_INTERVAL * 1000));
+                })();
+              }
 
               // Register a listener on each notification path.
               expandedPaths.forEach(path => {
@@ -203,8 +205,8 @@ module.exports = function (app) {
                       const subscribers = Object.keys(resources).reduce((a,k) => { if (k.includes('@')) a.email.push(k); if (!k.includes('@')) a.webpush.push(resources[k]); return(a); }, { email: [], webpush: [] });
                       //if (internetAvailable()) {
                         // If email is configured and we have subscribers then maybe we send a message.
-                        if ((plugin.email) && (subscribers.email.length > 0)) {
-                          // But only is the notification method is of interest.
+                        if ((plugin.email) && (plugin.email.getMessageOptions()) && (subscribers.email.length > 0)) {
+                          // But only if the notification method is of interest.
                           if (notification.method.reduce((a,v) => ((plugin.options.services.email.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
                             app.debug("sending message to email subscribers");
                             plugin.email
@@ -341,11 +343,16 @@ module.exports = function (app) {
     try {
       switch (req.path.slice(0, (req.path.indexOf('/', 1) == -1)?undefined:req.path.indexOf('/', 1))) {
         case '/status':
-          const body = {
-            wanState: WAN_STATE,
-            services: [].concat((plugin.email)?["email"]:[], (plugin.webpush)?["webpush"]:[])
-          };
-          expressSend(res, 200, body, req.path);
+          if (plugin.email) {
+            plugin.email.getTransporter().verify((e,s) => {
+              WAN_STATE = (e)?"down":"up";
+              const body = {
+                wanState: WAN_STATE,
+                services: [].concat(((plugin.email) && (plugin.email.getMessageOptions()))?["email"]:[], (plugin.webpush)?["webpush"]:[])
+              };
+              expressSend(res, 200, body, req.path);
+            });
+          }
           break;
         case '/keys':
           sanitizePaths(plugin.options.paths).then((expandedPaths) => {
