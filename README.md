@@ -269,7 +269,8 @@ looks like this.
       "email": {
         "methods": "push",
         "transportOptions": "{ \"host\": \"smtp.mail.server\", \"port\": 587, \"secure\": false, \"auth\": { \"user\": \"someone@mydomain\", \"pass\": \"mypassword\" }, \"tls\": { \"ciphers\": \"SSLv3\" } }",
-        "messageOptions": "{ \"from\": \"noreply@mydomain\" }"
+        "messageOptions": "{ \"from\": \"noreply@mydomain\" }",
+        "connectionCheckInterval": 10
       },
       "webpush": {
         "methods": "push"
