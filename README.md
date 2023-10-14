@@ -9,12 +9,15 @@ either email or web-push and to be in any way useful requires an
 operating environment that supports at least intermittent Internet
 connectivity.
 
-Email forwarding requires that the Signal K server has access to an
+Email messaging requires that the Signal K server has access to an
 SMTP mail submssion agent (MSA).
 The plugin uses
 [nodemailer](https://nodemailer.com/)
 as its mail user agent (MUA) and so works happily with most popular
 Internet mail services.
+If email messaging is configured, then the plugin can be set to
+verify and report Internet connection state by periodically checking
+the availability of the MSA.
 
 Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509

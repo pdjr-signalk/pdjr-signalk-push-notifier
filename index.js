@@ -77,6 +77,10 @@ const PLUGIN_SCHEMA = {
             "messageOptions": {
               "title": "Nodemailer message options",
               "type": "string"
+            },
+            "verifyConnectionInterval": {
+              "title": "Verify connection interval (s)",
+              "type": "number"
             }
           }
         },
@@ -105,7 +109,8 @@ const PLUGIN_UISCHEMA = {};
 module.exports = function (app) {
   var plugin = {};
   var unsubscribes = [];
-  var TOKEN = null;
+  var intervalId = undefined;
+  var WAN_STATE = 'unknown';
 
   plugin.id = PLUGIN_ID;
   plugin.name = PLUGIN_NAME;
@@ -136,8 +141,6 @@ module.exports = function (app) {
           // We got an authentication token and can do things.
           log.N("authenticated with server as user '%s'", plugin.id, false);
           plugin.token = body.token;
-          plugin.emailState = 0;
-          plugin.webpushState = 0;
 
           // Register listeners for any 'restart:' paths.
           plugin.options.paths.filter(path => (path.startsWith("restart:"))).forEach(path => {
@@ -155,7 +158,7 @@ module.exports = function (app) {
             try {
               const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
               plugin.email = new Email(transportOptions, { from: plugin.options.services.email.sender }, app.debug);
-              log.N("email service configured");    
+              log.N("email service configured");  
             } catch(e) { app.debug("error configuring email transport (%s)", e.message); }
           }
 
@@ -173,12 +176,20 @@ module.exports = function (app) {
             } catch(e) { app.debug("error configuring web-push transport (%s)", e.message); }
           }
 
+          intervalId = setInterval(() => {
+            if (plugin.options.services.email.verifyConnectionInterval == 0) {
+              WAN_STATE = 'unknowable';
+            } else {
+              plugin.email.verify().then((r) => { WAN_STATE = "up"; }).catch((e) => { WAN_STATE = "down"; });
+            }
+            log.N("listening on %d notification path%s (WAN state is '%s')", (unsubscribes.length - 1), (((unsubscribes.length - 1) == 0)?"s":""), WAN_STATE);
+          }, (plugin.options.services.email.verifyConnectionInterval * 1000));
+
           // We must have at least one service.
           if ((plugin.email) || (plugin.webpush)) {
           
             // Expand and clean up our list of paths to be monitored.
             sanitizePaths(plugin.options.paths).then((expandedPaths) => {
-              log.N("listening on %d notification path%s", expandedPaths.length, (expandedPaths.length == 0)?"s":"");
 
               // Register a listener on each notification path.
               expandedPaths.forEach(path => {
@@ -236,12 +247,13 @@ module.exports = function (app) {
   }
 
   plugin.stop = function() {
+    if (intervalId) clearInterval(intervalId);
 	  unsubscribes.forEach(f => f());
     unsubscribes = [];
   } 
 
   plugin.registerWithRouter = function(router) {
-    router.get('/status/:service', handleRoutes);
+    router.get('/status', handleRoutes);
     router.get('/keys', handleRoutes);
     router.post('/subscribe/:subscriberId', handleRoutes);
     router.delete('/unsubscribe/:subscriberId', handleRoutes);
@@ -329,16 +341,11 @@ module.exports = function (app) {
     try {
       switch (req.path.slice(0, (req.path.indexOf('/', 1) == -1)?undefined:req.path.indexOf('/', 1))) {
         case '/status':
-          switch(req.params.service) {
-            case'email':
-              expressSend(res, 200, new Number((plugin.email)?((plugin.emailState == 0)?2:1):0), req.path);
-              break;
-            case 'webpush':
-              break;
-            default:
-              throw new Error("400");
-              break;
-          }
+          const body = {
+            wanState: WAN_STATE,
+            services: [].concat((plugin.email)?["email"]:[], (plugin.webpush)?["webpush"]:[])
+          };
+          expressSend(res, 200, body, req.path);
           break;
         case '/keys':
           sanitizePaths(plugin.options.paths).then((expandedPaths) => {
@@ -393,8 +400,7 @@ module.exports = function (app) {
           subscriberId = req.params.subscriberId;
           notification = req.body;
           // If we have a valid notification...
-          if ((typeof notification === 'object') && (notification.state) && (notification.method) && (notification.message)) {
-            app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => {
+          if ((typeof notification === 'object') && (notification.state) && (notification.method) && (notification.message)) {            app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => {
               // Try to get subscription (email address or web-push subscription) for specified subscriber...
               const subscriptions = Object.keys(resources).filter(key => (key == subscriberId)).map(key => ((subscriberId.includes("@"))?key:resources[key].subscription));
               if (subscriptions.length == 1) {

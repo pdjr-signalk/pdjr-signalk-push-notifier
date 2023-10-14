@@ -16,39 +16,41 @@ externalDocs:
   description: Plugin README document
   url: https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme 
 paths:
-  /status/{service}:
+  /status:
     get:
       description: |
-        Get a numeric indication of the current status of a push
+        Get am indication of the current status of each push
         service.
-      parameters:
-        - in: path
-          name: service
-          description: |
-            Name of the service whose status is required (either
-            'email' or 'webpush').
-          required: true
-          schema:
-            type: string
-            pattern: '^email|webpush$'
       responses:
         200:
           description: |
             Success.
-            0 says the specified service is not configured; 1 says it
-            is configured but not available (probably because the
-            network connection is down); 2 says it is configured
-            and working.
+            The response body is a JSON object reporting service
+            status.
           content:
             application/json:
               schema:
-                type: number
-                minimum: 0
-                maximum: 2
-        400:
-          description: |
-            Bad parameter.
-            The service parameter was not recognised.
+                type: object
+                properties:
+                  wanState:
+                    description: |
+                      The last observed WAN state.
+                      'unknowable' means that WAN state checking is disabled.
+                      'unknown' means that the system has yet to check WAN
+                      availability after a start / restart.
+                      The plugin configuration sets the interval of WAN
+                      state checking and this value will always be more or
+                      less out of date.
+                    type: string
+                    pattern: '^unknowable|unknown|up|down$'
+                  services:
+                    description: |
+                      A list of configured services.
+                    type: array
+                    items:
+                      type: string
+                      pattern: '^email|webpush$'
+                      uniqueItems: true
         500:
           description: |
             Error.

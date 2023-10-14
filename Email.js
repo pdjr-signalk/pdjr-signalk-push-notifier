@@ -34,6 +34,11 @@ module.exports = class Email {
     this.debug = debug;
   }
 
+  async verify() {
+    if (this.debug) this.debug("Email.verify()...");
+    return(await this.transporter.verify());
+  }
+
   /**
    * Call sendEmail using the specified options.
    * @param {*} options 

@@ -12,6 +12,7 @@ window.onload = function() {
   emailUnsubscribeButton = document.getElementById('email-unsubscribe-button');
   emailTestButton = document.getElementById('email-test-button');
   emailPanel = document.getElementById('email-panel')
+  emailTestPanel = document.getElementById('email-test-panel');
 
   webpushForm = document.getElementById('webpush-form');
   webpushSubscribeButton = document.getElementById('webpush-subscribe-button');
@@ -25,6 +26,12 @@ window.onload = function() {
   webpushSubscribeButton.addEventListener('click', webpushSubscribeButtonHandler);
   webpushUnsubscribeButton.addEventListener('click', webpushUnsubscribeButtonHandler);
   webpushTestButton.addEventListener('click', webpushTestButtonHandler);
+
+  setTimeout(() => {
+    fetch('/plugins/push-notifier/status/email').then((response) => response.json().then((body) => {
+      console.log(">>>> %d", body);
+    })).catch((e) => { ; });
+  }, 5000);
 
   try {
     fetch('/plugins/push-notifier/config', { method: 'GET' }).then((response) => {

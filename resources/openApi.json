@@ -14,30 +14,40 @@
     "url": "https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme"
   },
   "paths": {
-    "/status/{service}": {
+    "/status": {
       "get": {
-        "description": "Get a numeric indication of the current status of a push\nservice.\n",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "service",
-            "description": "Name of the service whose status is required (either\n'email' or 'webpush').\n",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^email|webpush$"
-            }
-          }
-        ],
+        "description": "Get am indication of the current status of each push\nservice.\n",
         "responses": {
           "200": {
-            "description": "Success.\n0 says the specified service is not configured; 1 says it\nis configured but not available (probably because the\nnetwork connection is down); 2 says it is configured\nand working.\n",
+            "description": "Success.\nThe response body is a JSON object reporting service\nstatus.\n",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 2
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "webpush": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
