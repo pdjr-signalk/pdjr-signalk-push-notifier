@@ -36,7 +36,7 @@ monitored for notification events and notification methods that
 should trigger the issuing of an email message and/or a web-push
 notification.
 
-A simple retrieval mechanism allows Signal K paths to be retrieved
+A simple retrieval mechanism allows Signal K paths to be recovered
 from third party applications or plugins which expose an appropriate HTTP
 API method.
 This can be used to integrate the plugin's push services with, for example,
