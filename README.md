@@ -10,24 +10,25 @@ operating environment that supports at least intermittent Internet
 connectivity.
 
 Email messaging requires that the Signal K server has access to a
-mail submssion agent (MSA) of some sort, most probably one that
-offers a standard SMTP submission service.
+mail submssion agent (MSA) of some sort.
+The plugin uses
+[nodemailer](https://nodemailer.com/)
+as its mail user agent (MUA) so if an email service works with
+```nodemailer``` then it will work with the plugin.
 
 In addition to sending emails the plugin can perform periodic and/or
-ad-hoc connection checks against the MSA.
+ad-hoc connection checks against a configured and working MSA.
 If, as will normally be the case, your MSA is located out on the
 Internet somewhere then the result of these checks can be considered
 a proxy for Internet connection state.
-
-The plugin uses
-[nodemailer](https://nodemailer.com/)
-as its mail user agent (MUA) and so works happily with most popular
-email submission services.
 
 Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509
 keys either signed and distributed by a trusted authority or (more likely
 on a private LAN) self-signed and manually distributed.
+Generation of X.500 keys and their distribution and installation on a
+private LAN is a non-trivial, but perfectly feasible, exercise that is not
+covered by this docuemnt.
 
 Signal K users can subscribe to and unsubscribe from push services using
 the plugin's Webapp.
@@ -364,15 +365,16 @@ browsers, but the general approach is:
 
 1. Generate SSL keys and certificates.
 
-2. Install server keys in Signal K by copying the necessary file
+2. Install server keys in Signal K by copying the necessary files
    to the .signalk folder.
 
-8. Install client keys on required client devices.
+3. Install client keys on required client devices.
 
-9. Authorise the installed client keys.
+4. Most client devices will require you to manually authorise the
+   installed client keys.
 
-Without SSL this feature is only accessible from the Signal K server
-host, but in the circumstance that you have a UI and web-browser
+Without X.509 keys the web-push feature is only accessible from the
+Signal K server host, but in the circumstance that you have a UI and web-browser
 on the same device as your Signal server then you can check that things
 are working by opening the plugin's Webapp, clicking the 'Subscribe'
 button and allowing notifications from 'localhost' in the ensuing,
