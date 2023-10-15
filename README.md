@@ -26,9 +26,9 @@ Web-push notification requires that the host Signal K server runs with SSL
 security enabled and both server and clients must have appropriate X.509
 keys either signed and distributed by a trusted authority or (more likely
 on a private LAN) self-signed and manually distributed.
-Generation of X.500 keys and their distribution and installation on a
+Generation of X.509 keys and their distribution and installation on a
 private LAN is a non-trivial, but perfectly feasible, exercise that is not
-covered by this docuemnt.
+covered by this document.
 
 Signal K users can subscribe to and unsubscribe from push services using
 the plugin's Webapp.
@@ -263,8 +263,8 @@ K OpenAPI service.
 
 ### Configuration example
 
-I use the plugin exclusively for forwarding email notifications raised
-by my alarm manager and my ```push-notifier.json``` configuration file
+I use the plugin exclusively for forwarding email and web-push notifications
+raised by my alarm manager and my ```push-notifier.json``` configuration file
 looks like this.
 ```
 {
