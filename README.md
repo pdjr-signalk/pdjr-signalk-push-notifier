@@ -290,14 +290,15 @@ looks like this.
   "enableDebug": false
 }
 ```
-My mail service is vanilla SMTP secured with TLS and the transport configuration
-object I pass (as a JSON string) to ```transportOptions``` is:
+Considering the ```services.emeail.transportOptions```  parameter: my mail
+service is vanilla SMTP secured with TLS and the transport configuration
+object I pass (as a JSON string) to ```transportOptions``` has the form:
 ```
 {
   host: "smtp.mail.server",
   port": 587,
   secure: false,
-  auth\: {
+  auth: {
     user: "myloginid@mydomain",
     pass: "mypassword"
   },
@@ -306,10 +307,8 @@ object I pass (as a JSON string) to ```transportOptions``` is:
   }
 }
 ```
-An example transport configuration object suitable for use with Gmail is given
-below.
-Note that this requires two-step verification to be enabled in Google and an
-app specific password to be configured for use by the plugin.
+If I used GMail as my MSA, then a typical configuration object would have a
+slightly different form:
 ```
 {
   service: 'gmail',
@@ -319,6 +318,10 @@ app specific password to be configured for use by the plugin.
   }
 }
 ```
+Note that this GMail solution requires two-step verification to be enabled
+in Google and an app specific password to be configured for use by the plugin.
+
+Returning to my plugin configuration.
 I keep my VAPID keys in environment variables and the absence of a
 ```services.webpush.transportOptions``` property forces the plugin to
 recover its VAPID data from the host environment.
