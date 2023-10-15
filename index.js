@@ -333,7 +333,7 @@ module.exports = function (app) {
     app.debug("createMessageFromNotification(%s,%s)...", notification, path);
     return({
       subject: notification.state.toUpperCase() + " notification" + ((path)?(" on " + path):""),
-      body: notification.message
+      text: notification.message
     })
   }
 
