@@ -289,7 +289,35 @@ looks like this.
   "enabled": true,
   "enableDebug": false
 }
-
+```
+My mail service is vanilla SMTP secured with TLS and the transport configuration
+object I pass (as a JSON string) to ```transportOptions``` is:
+```
+{
+  host: "smtp.mail.server",
+  port": 587,
+  secure: false,
+  auth\: {
+    user: "myloginid@mydomain",
+    pass: "mypassword"
+  },
+  tls: {
+    ciphers: "SSLv3"
+  }
+}
+```
+An example transport configuration object suitable for use with Gmail is given
+below.
+Note that this requires two-step verification to be enabled in Google and an
+app specific password to be configured for use by the plugin.
+```
+{
+  service: 'gmail',
+  auth: {
+    user: 'username@gmail.com',
+    pass: 'app-specific-password'
+  }
+}
 ```
 I keep my VAPID keys in environment variables and the absence of a
 ```services.webpush.transportOptions``` property forces the plugin to
@@ -333,16 +361,17 @@ resource type ```push-notifier```.
    $> web-push generate-vapid-keys
    ```
 
-2. Make VAPID keys available in the Signal K execution environment
-   by using a text editor to add the following lines to the beginning
-   of the ```signalk-server``` start script.
+2. Make the VAPID keys generated at (1) available in the Signal K
+   execution environment by using a text editor to add the following
+   lines to the beginning of the ```signalk-server``` start script
+   found in your ```.signalk/``` folder.
    ```
    export VAPID_PUBLIC_KEY=*public key*
    export VAPID_PRIVATE_KEY=*private key*
    export VAPID_SUBJECT=mailto:*some email address*
    ```
 
-3. Configure Signal K to operate using SSL (if it isn't already) by
+4. Configure Signal K to operate using SSL (if it isn't already) by
    running 'signalk-server-setup' and entering 'y' in response to the
    'Do you want to enable SSL?' prompt.
 
@@ -355,7 +384,7 @@ to be done.
 
 Mostly though, our Signal K servers operate on a private LAN and we
 need to provide an SSL infastructure that will allow the required push
-notification protocols to operate.
+notification protocols to operate securely.
 There are a number of ways to achieve this, but I use the simple
 expedient of installing self-signed SSL certificates on the Signal K
 server and client devices.
@@ -364,7 +393,7 @@ installed and authorised on each push notification client.
 The details of this procedure differ across operating systems and
 browsers, but the general approach is:
 
-1. Generate SSL keys and certificates.
+1. Generate X.509 keys and certificates.
 
 2. Install server keys in Signal K by copying the necessary files
    to the .signalk folder.
