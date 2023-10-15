@@ -110,8 +110,8 @@ const VERIFY_WAN_CONNECTION_INTERVAL = 60;
 module.exports = function (app) {
   var plugin = {};
   var unsubscribes = [];
-  var intervalId = undefined;
-  var WAN_STATE = 'unknowable';
+  var timeoutId = undefined;
+  var connectionState = 'unknowable';
 
   plugin.id = PLUGIN_ID;
   plugin.name = PLUGIN_NAME;
@@ -185,15 +185,15 @@ module.exports = function (app) {
             sanitizePaths(plugin.options.paths).then((expandedPaths) => {
 
               // Maybe check WAN connection
-              log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), WAN_STATE);
+              log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
               if ((plugin.email) && (plugin.options.services.email.connectionCheckInterval) && (plugin.options.services.email.connectionCheckInterval > 0)) {
-                WAN_STATE = 'unknown';
+                connectionState = 'unknown';
                 (function loop() {
                   plugin.email.getTransporter().verify((e,s) => {
-                    WAN_STATE = (e)?"down":"up";
-                    log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), WAN_STATE);
+                    connectionState = (e)?"down":"up";
+                    log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
                   });
-                  intervalId = setTimeout(() => { loop(); }, (plugin.options.services.email.connectionCheckInterval * 60000));
+                  timeoutId = setTimeout(() => { loop(); }, (plugin.options.services.email.connectionCheckInterval * 60000));
                 })();
               }
 
@@ -253,7 +253,7 @@ module.exports = function (app) {
   }
 
   plugin.stop = function() {
-    if (intervalId) clearInterval(intervalId);
+    clearTimeout(timeoutId);
 	  unsubscribes.forEach(f => f());
     unsubscribes = [];
   } 
@@ -336,10 +336,6 @@ module.exports = function (app) {
       body: notification.message
     })
   }
-
-  /********************************************************************
-   * EXPRESS ROUTE HANDLING
-   */
 
   function handleRoutes(req, res) {
     app.debug("received %s request on %s", req.method, req.path);
