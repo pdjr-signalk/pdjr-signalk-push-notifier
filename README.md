@@ -28,7 +28,7 @@ keys either signed and distributed by a trusted authority or (more likely
 on a private LAN) self-signed and manually distributed.
 Generation of X.509 keys and their distribution and installation on a
 private LAN is a non-trivial, but perfectly feasible, exercise that is not
-covered by this document.
+covered in detail by this document.
 
 Signal K users can subscribe to and unsubscribe from push services using
 the plugin's Webapp.
@@ -313,16 +313,17 @@ resource type ```push-notifier```.
 
 #### Configuring email use
 
-1. Create a transport configuration object for
-   [nodemailer](https://nodemailer.com/) that allows you to connect
-   to your mail submission agent.
+1. Create (or find online and tweak) a transport configuration object
+   for
+   [nodemailer](https://nodemailer.com/)
+   that should allows you to connect to your mail submission agent.
 
-2. Convert the object you create at (1) into a JSON string and
+3. Convert the object you create at (1) into a JSON string and
    save the string as the value of the ```transmissionObject```
    property in the plugin configuration.
 
-You should now be able to viisit the plugin's webapp and be able
-to subscribe and test email notification.
+4. You should now be able to visit the plugin's ```/status``` URL
+   and be able and determine whether or not your configuration works.
 
 #### Configuring wep-push notification use
 
@@ -373,24 +374,14 @@ browsers, but the general approach is:
 4. Most client devices will require you to manually authorise the
    installed client keys.
 
-Without X.509 keys the web-push feature is only accessible from the
-Signal K server host, but in the circumstance that you have a UI and web-browser
-on the same device as your Signal server then you can check that things
-are working by opening the plugin's Webapp, clicking the 'Subscribe'
-button and allowing notifications from 'localhost' in the ensuing,
-browser-generated, dialogue.
-Once subscribed, if you then click the 'Test' button you should
-receive a push notification confirming that the plugin is able
-to communicate with a trusted peer.
-Repeating this procedure from a device other than the Signal K
-server will fail because the Signal K server and client are unable
-to authenticate one-another using SSL.
+Without X.509 keys the web-push feature will only be accessible from the
+Signal K server host (i.e. the host and client must be the same device).
 
 ## Operating principle
 
 The plugin monitors the configured Signal K paths for the appearance
-of an alarm notification and, if the raised notification has a method
-value which is trapped by a push notification service then the
+of an alarm notification and for each configured service if the raised
+notification has a method value which is trapped by the service then the
 notification is forwarded to all users subscribed to that service.
 
 ## Author
