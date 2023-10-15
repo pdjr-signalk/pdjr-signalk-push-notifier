@@ -346,16 +346,19 @@ module.exports = function (app) {
     var subscriberId;
     try {
       switch (req.path.slice(0, (req.path.indexOf('/', 1) == -1)?undefined:req.path.indexOf('/', 1))) {
-        case '/status':
+        case '/status': 
+          var services = [].concat(((plugin.email) && (plugin.email.getMessageOptions()))?["email"]:[], (plugin.webpush)?["webpush"]:[]);
+          var reason = "Email transport is not configured.";
           if (plugin.email) {
             plugin.email.getTransporter().verify((e,s) => {
-              WAN_STATE = (e)?"down":"up";
-              const body = {
-                wanState: WAN_STATE,
-                services: [].concat(((plugin.email) && (plugin.email.getMessageOptions()))?["email"]:[], (plugin.webpush)?["webpush"]:[])
-              };
-              expressSend(res, 200, body, req.path);
+              if (e) {
+                expressSend(res, 200, { connection: "down", services: services, reason: e }, req.path);
+              } else {
+                expressSend(res, 200, { connection: "up", services: services }, req.path);
+              }
             });
+          } else {
+            expressSend(res, 200, { connection: 'unknown', services: services }, req.path);
           }
           break;
         case '/keys':

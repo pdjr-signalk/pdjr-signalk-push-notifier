@@ -27,22 +27,34 @@ paths:
             Success.
             The response body is a JSON object reporting service
             status.
+            This request triggers a transient connection to any
+            configured mail host.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  wanState:
+                  connection:
                     description: |
-                      The last observed WAN state.
-                      'unknowable' means that WAN state checking is disabled.
-                      'unknown' means that the system has yet to check WAN
-                      availability after a start / restart.
-                      The plugin configuration sets the interval of WAN
-                      state checking and this value will always be more or
-                      less out of date.
+                      The current state of the plugin's connection to the
+                      MSU.
+                      If the MSU is Internet-based and known to be properly
+                      configured (i.e. has been used successfully in the past)
+                      then this response may stand as a proxy for the host's
+                      Internet connection state.
+
+                      There are three possible return values:
+
+                      'unknown' means that the email service is not
+                      configured;
+
+                      'up' means that the MSU responded to a connection
+                      requests.
+                      
+                      'down' means that the MSU did not respond to or
+                      otherwise rejected a connection request.
                     type: string
-                    pattern: '^unknowable|unknown|up|down$'
+                    pattern: '^unknown|up|down$'
                   services:
                     description: |
                       A list of configured services.
@@ -51,6 +63,11 @@ paths:
                       type: string
                       pattern: '^email|webpush$'
                       uniqueItems: true
+                  reason:
+                    description: |
+                      If connection is not 'up', then contains the reason
+                      reported by ```nodemailer```.
+                    type: string                    
         500:
           description: |
             Error.

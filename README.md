@@ -166,7 +166,11 @@ K OpenAPI service.
             to configure the connection to your mail submission agent.
             </p>
             <p>
-            If you use Google email, then pay particular attention to these
+            If you are configuring this property for the first time, then
+            the plugin API <code>/status</code> route may return helpful
+            debug information.
+            <p>
+            If you use GMail, then pay particular attention to these
             notes on
             [using Gmail](https://nodemailer.com/usage/using-gmail/).
             </p>
@@ -179,10 +183,14 @@ K OpenAPI service.
             "body" and "to") before the result is passed to
             <code>nodemailer.transporter.sendMail()</code>.
             This property must be used to specifying the 'from' address to
-            be used in outgoing messages; omitting the property prevents
-            email messages being sent, but will still allow connectivity
-            checking (see below).
+            be used in outgoing messages; omitting this property prevents
+            email messages being sent (but will still allow connectivity
+            checking (see below)).
             </p>
+            <p>
+            Notwithstanding the plugin's requirements in respect of 'from',
+            some email services (notably GMail) will overwrite this
+            setting.
           </dd>
           <dt>Connection check interval (m) <code>connectionCheckInterval</code></dt>
           <dd>
