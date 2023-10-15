@@ -16,8 +16,8 @@ offers a standard SMTP submission service.
 In addition to sending emails the plugin can perform periodic and/or
 ad-hoc connection checks against the MSA.
 If, as will normally be the case, your MSA is located out on the
-Internet somewhere then these checks provide verification of WAN/
-Internet availability.
+Internet somewhere then the result of these checks can be considered
+a proxy for Internet connection state.
 
 The plugin uses
 [nodemailer](https://nodemailer.com/)
