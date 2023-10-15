@@ -28,7 +28,7 @@ keys either signed and distributed by a trusted authority or (more likely
 on a private LAN) self-signed and manually distributed.
 Generation of X.509 keys and their distribution and installation on a
 private LAN is a non-trivial, but perfectly feasible, exercise that is not
-covered in detail by this document.
+covered in detail by this document but is well documented elsewhere.
 
 Signal K users can subscribe to and unsubscribe from push services using
 the plugin's Webapp.
