@@ -28,9 +28,16 @@ window.onload = function() {
   webpushTestButton.addEventListener('click', webpushTestButtonHandler);
 
   setTimeout(() => {
-    fetch('/plugins/push-notifier/status/email').then((response) => response.json().then((body) => {
-      console.log(">>>> %d", body);
-    })).catch((e) => { ; });
+    fetch('/plugins/push-notifier/status').then((response) => {
+      if ((response) && (response.status == 200)) {
+        console.log("Got response");
+        response.json().then((body) => {
+          console.log(JSON.stringify(body));
+          emailTestButton.disabled = (body.connection != 'up');
+          webpushTestButton.disabled = (body.connection != 'up');
+        })
+      }
+    }).catch((e) => { console.log("Oohps"); });
   }, 5000);
 
   try {
