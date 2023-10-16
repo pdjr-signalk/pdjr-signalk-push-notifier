@@ -27,18 +27,7 @@ window.onload = function() {
   webpushUnsubscribeButton.addEventListener('click', webpushUnsubscribeButtonHandler);
   webpushTestButton.addEventListener('click', webpushTestButtonHandler);
 
-  setTimeout(() => {
-    fetch('/plugins/push-notifier/status').then((response) => {
-      if ((response) && (response.status == 200)) {
-        console.log("Got response");
-        response.json().then((body) => {
-          console.log(JSON.stringify(body));
-          emailTestButton.disabled = (body.connection != 'up');
-          webpushTestButton.disabled = (body.connection != 'up');
-        })
-      }
-    }).catch((e) => { console.log("Oohps"); });
-  }, 5000);
+  
 
   try {
     fetch('/plugins/push-notifier/config', { method: 'GET' }).then((response) => {
@@ -205,11 +194,23 @@ async function unsubscribe(subscriberId) {
 }
 
 async function test(subscriberId, notification) {
-  fetch('/plugins/push-notifier/push/' + subscriberId, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notification) }).then((r) => {
-    console.info("Server accepted push request");
-  }).catch((e) => {
-    throw new Error("Server rejected push request");
-  });
+  try {
+    fetch('/plugins/push-notifier/status').then((response) => {
+      if ((response) && (response.status == 200)) {
+        response.json().then((body) => {
+          if (body.connection == 'up') {
+            fetch('/plugins/push-notifier/push/' + subscriberId, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notification) }).then((r) => {
+              console.info("Server accepted push request");
+            }).catch((e) => {
+              throw new Error("Server rejected push request");
+            });        
+          }
+        })
+      }
+    }).catch((e) => { throw new Error("Test push failed (WAN connection may be down)"); });
+  } catch(e) {
+    alert(e.message);
+  }
 }
 
 function registerServiceWorker() {
