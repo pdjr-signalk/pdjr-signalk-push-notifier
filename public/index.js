@@ -146,16 +146,20 @@ async function webpushUnsubscribeButtonHandler() {
 async function webpushTestButtonHandler() {
   webpushTestButton.disabled = true;
   try {
-    const result = await Notification.requestPermission();
-    if (result === 'granted') {
-      const registration = await navigator.serviceWorker.getRegistration();
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        const subscriberId = subscription.endpoint.slice(-8);
-        const notification = { state: "normal", method: [], message: "Test notification for push-notifier" };
-        await test(subscriberId, notification);
-      } else alert("You must subscribe to web-push notifications before you can test your subscription!");
-    } else console.error("The user explicitly denied the push notification permission request");
+    if (await checkConnection()) {
+      const result = await Notification.requestPermission();
+      if (result === 'granted') {
+        const registration = await navigator.serviceWorker.getRegistration();
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          const subscriberId = subscription.endpoint.slice(-8);
+          const notification = { state: "normal", method: [], message: "Test notification for push-notifier" };
+          await test(subscriberId, notification);
+        } else alert("You must subscribe to web-push notifications before you can test your subscription!");
+      } else console.error("The user explicitly denied the push notification permission request");
+    } else {
+      alert("Test request abandoned because server reports WAN connection is down.");
+    }  
   } catch(e) { console.error("Web-push test failed (" + e.message + ")"); }
   webpushTestButton.disabled = false;
 }
@@ -194,23 +198,23 @@ async function unsubscribe(subscriberId) {
 }
 
 async function test(subscriberId, notification) {
-  try {
-    fetch('/plugins/push-notifier/status').then((response) => {
-      if ((response) && (response.status == 200)) {
-        response.json().then((body) => {
-          if (body.connection == 'up') {
-            fetch('/plugins/push-notifier/push/' + subscriberId, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notification) }).then((r) => {
-              console.info("Server accepted push request");
-            }).catch((e) => {
-              throw new Error("Server rejected push request");
-            });        
-          }
-        })
-      }
-    }).catch((e) => { throw new Error("Test push failed (WAN connection may be down)"); });
-  } catch(e) {
-    alert(e.message);
-  }
+  await fetch('/plugins/push-notifier/push/' + subscriberId, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notification) }).then((r) => {
+    console.info("Server accepted push request");
+  }).catch((e) => {
+    throw new Error("Server rejected push request");
+  });
+}
+
+/**
+ * @returns - true if server reports WAN connection 'up'.
+ */
+async function checkConnection() {
+  return(
+    fetch('/plugins/push-notifier/status', { method: 'GET' })
+    .then((response) => response.json())
+    .then((body) => { return(body.connection == "up") })
+    .catch((e) => { return(false) })
+  );
 }
 
 function registerServiceWorker() {
