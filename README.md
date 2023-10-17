@@ -95,12 +95,12 @@ K OpenAPI service.
   <dt>Subscriber database (<code>subscriberDatabase</code>)</dt>
   <dd>
     <p>
-    This optional property defines the Signal K resources provider that
+    This optional property defines the Signal K resource provider that
     will be used to store email and web-push subscriptions.
     </p>
     <p>
     If you omit this property a default value will be used that selects
-    the Signal K built-in resources provider (<code>resources-provider</code>)
+    the Signal K built-in resource provider (<code>resources-provider</code>)
     and the resource type <code>push-notifier</code>.
     </p>
     <p>
@@ -108,10 +108,10 @@ K OpenAPI service.
     provider configuration that matches the resource type name expected
     by this plugin.
     <dl>
-      <dt>Resources provider <code>resourcesProvider</code></dt>
+      <dt>Resource provider <code>resourceProvider</code></dt>
       <dd>
         <p>
-        The name of the Signal K resources provider that will be
+        The name of the Signal K resource provider that will be
         used to persist subscriber data.
         </p>
       </dd>
@@ -264,7 +264,7 @@ K OpenAPI service.
 I use the plugin exclusively for forwarding email and web-push notifications
 raised by my alarm manager.
 
-I use Signal K's default resources provider and have saved my VAPID keys
+I use Signal K's default resource provider and have saved my VAPID keys
 into the server environment, eliminating the requirement to specify the
 related properties in my configuration.
 My ```push-notifier.json``` configuration file looks like this.
@@ -328,7 +328,7 @@ in Google and an app specific password to be configured for use by the plugin.
 1. Create a persistent data store where the plugin can save push
    notification subscriptions.
    If you use the plugin defaults for 'subscriberDatabase' then
-   configure Signal K's 'Resources Provider (built-in)' plugin to
+   configure Signal K's 'Resource Provider (built-in)' plugin to
    support the 'push-notifier' resource type.
 
 3. Recommended. Create a Signal K user with the username and

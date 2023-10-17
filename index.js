@@ -45,9 +45,9 @@ const PLUGIN_SCHEMA = {
       "description": "Database used to persist push notification subscribers",
       "type": "object",
       "properties": {
-        "resourcesProviderId": {
-          "title": "Resources provider",
-          "description": "Resources provider used to persist notification subscriptions",
+        "resourceProviderId": {
+          "title": "Resource provider",
+          "description": "Resource provider used to persist notification subscriptions",
           "type": "string"
         },
         "resourceType": {
@@ -56,7 +56,7 @@ const PLUGIN_SCHEMA = {
           "type": "string"
         }
       },
-      "default": { "resourcesProviderId": "resources-provider", "resourceType": "push-notifier" }
+      "default": { "resourceProviderId": "resources-provider", "resourceType": "push-notifier" }
     },
     "services": {
       "type": "object",
@@ -205,7 +205,7 @@ module.exports = function (app) {
                   if ((notification) && (notification.method)) {
 
                     // Get the subscriber list and separate out email and web-push subscribers.
-                    app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => {
+                    app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourceProviderId).then((resources) => {
                       const subscribers = Object.keys(resources).reduce((a,k) => { if (k.includes('@')) a.email.push(k); if (!k.includes('@')) a.webpush.push(resources[k]); return(a); }, { email: [], webpush: [] });
                       //if (internetAvailable()) {
                         // If email is configured and we have subscribers then maybe we send a message.
@@ -275,11 +275,11 @@ module.exports = function (app) {
     app.debug("handleWebpushFailure(%s,%s)...", subscriberId, subscription);
     if (subscription.sendFailureCount > WEBPUSH_SEND_FAILURE_LIMIT) {
       app.debug("handleWebpushFailure: deleting subscription for subscriber '%s' (too many send failures)", subscriberId);
-      await app.resourcesApi.deleteResource(plugin.options.subscriberDatabase.resourceType, subscriberId, plugin.options.subscriberDatabase.resourcesProviderId);
+      await app.resourcesApi.deleteResource(plugin.options.subscriberDatabase.resourceType, subscriberId, plugin.options.subscriberDatabase.resourceProviderId);
     } else {
       app.debug("handleWebpushFailure: bumping send failure count for subscriber '%s' (new send failure)", sid);
       subscription.sendFailureCount++;
-      await app.resourcesApi.setResource(plugin.options.subscriberDatabase.resourceType, subscriberId, subscription, plugin.options.subscriberDatabase.resourcesProviderId);
+      await app.resourcesApi.setResource(plugin.options.subscriberDatabase.resourceType, subscriberId, subscription, plugin.options.subscriberDatabase.resourceProviderId);
     }
   }
 
@@ -372,7 +372,7 @@ module.exports = function (app) {
               plugin.options.subscriberDatabase.resourceType,
               subscriberId,
               { subscription: subscription, sendFailureCount: 0 },
-              plugin.options.subscriberDatabase.resourcesProviderId
+              plugin.options.subscriberDatabase.resourceProviderId
             ).then(() => {
               expressSend(res, 200, null, req.path);
             }).catch((e) => {
@@ -388,7 +388,7 @@ module.exports = function (app) {
             app.resourcesApi.deleteResource(
               plugin.options.subscriberDatabase.resourceType,
               subscriberId,
-              plugin.options.subscriberDatabase.resourcesProviderId
+              plugin.options.subscriberDatabase.resourceProviderId
             ).then(() => {
               expressSend(res, 200, null, req.path);
             }).catch((e) => {
@@ -410,7 +410,7 @@ module.exports = function (app) {
           subscriberId = req.params.subscriberId;
           notification = req.body;
           // If we have a valid notification...
-          if ((typeof notification === 'object') && (notification.state) && (notification.method) && (notification.message)) {            app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourcesProviderId).then((resources) => {
+          if ((typeof notification === 'object') && (notification.state) && (notification.method) && (notification.message)) {            app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourceProviderId).then((resources) => {
               // Try to get subscription (email address or web-push subscription) for specified subscriber...
               const subscriptions = Object.keys(resources).filter(key => (key == subscriberId)).map(key => ((subscriberId.includes("@"))?key:resources[key].subscription));
               if (subscriptions.length == 1) {
