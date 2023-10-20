@@ -67,7 +67,7 @@ const PLUGIN_SCHEMA = {
           "type": "object",
           "properties": {
             "states": {
-              "title": "Trigger on these methods",
+              "title": "Trigger on these notification states",
               "description": "Comma-separated list of notification states that will trigger a push",
               "type": "array",
               "items": {
@@ -95,7 +95,7 @@ const PLUGIN_SCHEMA = {
           "type": "object",
           "properties": {
             "states": {
-              "title": "Trigger on these methods",
+              "title": "Trigger on these notification states",
               "description": "Comma-separated list of notification states that will trigger a push",
               "type": "array",
               "items": {
@@ -214,7 +214,7 @@ module.exports = function (app) {
                 const stream = app.streambundle.getSelfStream("notifications." + path);
                 unsubscribes.push(stream.onValue((notification) => {
                   // Handle any received notifications.
-                  if ((notification) && (notification.method)) {
+                  if ((notification) && (notification.state)) {
 
                     // Get the subscriber list and separate out email and web-push subscribers.
                     app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourceProviderId).then((resources) => {
@@ -234,7 +234,7 @@ module.exports = function (app) {
 
                         // If web-push is configured and we have subscribers then maybe send a push notification.
                         if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
-                          // But only is the notification method is of interest.
+                          // But only if the notification state is of interest.
                           if (plugin.options.services.webpush.states.includes(notification.state)) {
                             app.debug("sending notification to web-push subscribers");
                             try {
