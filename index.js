@@ -19,6 +19,8 @@ const Log = require("./lib/signalk-liblog/Log.js");
 const Webpush = require("./Webpush.js");
 const Email = require("./Email.js");
 
+const NOTIFICATION_STATES = [ "normal", "alert", "warn", "alarm", "emergency" ];
+
 const PLUGIN_ID = "push-notifier";
 const PLUGIN_NAME = "pdjr-skplugin-push-notifier";
 const PLUGIN_DESCRIPTION = "Push notifications over email and/or web-push.";
@@ -64,11 +66,16 @@ const PLUGIN_SCHEMA = {
         "email": {
           "type": "object",
           "properties": {
-            "methods": {
+            "states": {
               "title": "Trigger on these methods",
-              "description": "Comma-separated list of notification methods that will trigger a push",
-              "type": "string",
-              "default": "sound, visual"
+              "description": "Comma-separated list of notification states that will trigger a push",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": NOTIFICATION_STATES
+              },
+              "uniqueItems": true,
+              "default": [ "alarm", "emergency" ]
             },
             "transportOptions": {
               "title": "Nodemailer transport options",
@@ -87,13 +94,18 @@ const PLUGIN_SCHEMA = {
         "webpush" : {
           "type": "object",
           "properties": {
-            "methods": {
+            "states": {
               "title": "Trigger on these methods",
-              "description": "Comma-separated list of notification methods that will trigger a push",
-              "type": "string",
-              "default": "sound, visual"
+              "description": "Comma-separated list of notification states that will trigger a push",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": NOTIFICATION_STATES
+              },
+              "uniqueItems": true,
+              "default": [ "alarm", "emergency" ]
             },
-            "transportOptions": {
+             "transportOptions": {
               "title": "Webpush transport options",
               "type": "string"
             },
@@ -210,8 +222,8 @@ module.exports = function (app) {
                       //if (internetAvailable()) {
                         // If email is configured and we have subscribers then maybe we send a message.
                         if ((plugin.email) && (plugin.email.getMessageOptions()) && (subscribers.email.length > 0)) {
-                          // But only if the notification method is of interest.
-                          if (notification.method.reduce((a,v) => ((plugin.options.services.email.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
+                          // But only if the notification state is of interest.
+                          if (plugin.options.services.email.states.includes(notification.state)) {
                             app.debug("sending message to email subscribers");
                             plugin.email
                               .send({ ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } })
@@ -223,7 +235,7 @@ module.exports = function (app) {
                         // If web-push is configured and we have subscribers then maybe send a push notification.
                         if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
                           // But only is the notification method is of interest.
-                          if (notification.method.reduce((a,v) => ((plugin.options.services.webpush.methods.split(',').map(m => m.trim())).includes(v) || a), false)) {
+                          if (plugin.options.services.webpush.states.includes(notification.state)) {
                             app.debug("sending notification to web-push subscribers");
                             try {
                               plugin.webpush.send(
