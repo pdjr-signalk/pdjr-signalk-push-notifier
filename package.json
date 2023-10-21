@@ -30,13 +30,12 @@
   },
   "homepage": "https://github.com/pdjr-signalk/pdjr-skplugin-push-notifier#readme",
   "dependencies": {
+    "bonjour": "^3.5.0",
     "lodash": "^4.17.21",
     "sprintf-js": "^1.1.2",
     "web-push": "^3.6.6"
   },
   "directories": {
     "lib": "lib"
-  },
-  "devDependencies": {
   }
 }

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-const _ = require("lodash");
-const Log = require("./lib/signalk-liblog/Log.js");
-const Webpush = require("./Webpush.js");
-const Email = require("./Email.js");
+const _ = require('lodash');
+const bonjour = require('bonjour')();
+const myApp = require('./lib/signalk-libapp/App.js');
+const Log = require('./lib/signalk-liblog/Log.js');
+const Webpush = require('./Webpush.js');
+const Email = require('./Email.js');
 
 const NOTIFICATION_STATES = [ "normal", "alert", "warn", "alarm", "emergency" ];
 
@@ -131,6 +133,7 @@ module.exports = function (app) {
   plugin.schema = PLUGIN_SCHEMA;
   plugin.uiSchema = PLUGIN_UISCHEMA;
 
+  const App = new myApp(app)
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
   
   plugin.start = function(options, restartPlugin) {
@@ -144,124 +147,140 @@ module.exports = function (app) {
     plugin.options.subscriberDatabase = { ...plugin.schema.properties.subscriberDatabase.default, ...options.subscriberDatabase };
     plugin.options.services = options.services || plugin.schema.properties.services.default;
     app.debug("using configuration: %s", JSON.stringify(plugin.options, null, 2));
-    
-    // Must login to Signal K server to do anything.
-    const [ username, password ] = plugin.options.credentials.split(':');   
-    fetch("https://localhost:3443/signalk/v1/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username, password: password })}).then((response) => {
-      if (response.status == 200) {
-        response.json().then((body) => {
 
-          // We got an authentication token and can do things.
-          log.N("authenticated with server as user '%s'", plugin.id, false);
-          plugin.token = body.token;
+    try {
+      App.findServerAddress(app.getSelfPath('uuid')).then((serverAddress) => {
+        if (serverAddress) {
+          fetch(`${serverAddress}/signalk`, { method: 'GET' })
+          .then((response) => {
+            response.json()
+            .then((signalk) => {
+              console.log(JSON.stringify(signalk));
+              const serverEndpoint = Object.keys(signalk.endpoints)[0];
+              app.debug(`server endpoint = '${serverEndpoint}'`)
+              const [ username, password ] = plugin.options.credentials.split(':');   
+              fetch(`${serverAddress}/signalk/${serverEndpoint}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username, password: password })})
+              .then((response) => {
+              if (response.status == 200) {
+                // We got an authentication token and can do things.
+                response.json()
+                .then((authentication) => {
+                  log.N(`authenticated with server as user ${username}`, false);
+                  plugin.token = authentication.token;
 
-          // Register listeners for any 'restart:' paths.
-          plugin.options.paths.filter(path => (path.startsWith("restart:"))).forEach(path => {
-            [label, notificationPath] = path.split(":");
-            log.N("registering restart listener on '%s'", notificationPath, false);
-            const stream = app.streambundle.getSelfStream(notificationPath);
-            unsubscribes.push(stream.onValue((notification) => {
-              log.N("restarting because of rule '%s'", path);
-              restartPlugin(options);
-            }));
-          });
-
-          // Attempt to create Email instance used to send emails.
-          if (plugin.options.services.email) {
-            try {
-              const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
-              const messageOptions = (plugin.options.services.email.messageOptions)?JSON.parse(plugin.options.services.email.messageOptions):null;
-              plugin.email = new Email(transportOptions, messageOptions, app.debug);
-              log.N("email service configured");  
-            } catch(e) { app.debug("error configuring email transport (%s)", e.message); }
-          }
-
-          // Attempt to create Webpush instance used to send web-push notifications.
-          if (plugin.options.services.webpush) {
-            try {
-              var transportOptions = null;
-              if (plugin.options.services.webpush.transportOptions) {
-                transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
-              } else {
-                transportOptions = { vapid: { privateKey: process.env.VAPID_PRIVATE_KEY, publicKey: process.env.VAPID_PUBLIC_KEY, subject: process.env.VAPID_SUBJECT } };
-              }
-              plugin.webpush = new Webpush(transportOptions, app.debug);
-              log.N("web-push service configured");
-            } catch(e) { app.debug("error configuring web-push transport (%s)", e.message); }
-          }
-
-          // We must have at least one service.
-          if ((plugin.email) || (plugin.webpush)) {
-          
-            // Expand and clean up our list of paths to be monitored.
-            sanitizePaths(plugin.options.paths).then((expandedPaths) => {
-
-              // Maybe check WAN connection
-              log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
-              if ((plugin.email) && (plugin.options.services.email.connectionCheckInterval) && (plugin.options.services.email.connectionCheckInterval > 0)) {
-                connectionState = 'unknown';
-                (function loop() {
-                  plugin.email.getTransporter().verify((e,s) => {
-                    connectionState = (e)?"down":"up";
-                    log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
-                  });
-                  timeoutId = setTimeout(() => { loop(); }, (plugin.options.services.email.connectionCheckInterval * 60000));
-                })();
-              }
-
-              // Register a listener on each notification path.
-              expandedPaths.forEach(path => {
-                const stream = app.streambundle.getSelfStream("notifications." + path);
-                unsubscribes.push(stream.onValue((notification) => {
-                  // Handle any received notifications.
-                  if ((notification) && (notification.state)) {
-
-                    // Get the subscriber list and separate out email and web-push subscribers.
-                    app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourceProviderId).then((resources) => {
-                      const subscribers = Object.keys(resources).reduce((a,k) => { if (k.includes('@')) a.email.push(k); if (!k.includes('@')) a.webpush.push(resources[k]); return(a); }, { email: [], webpush: [] });
-                      //if (internetAvailable()) {
-                        // If email is configured and we have subscribers then maybe we send a message.
-                        if ((plugin.email) && (plugin.email.getMessageOptions()) && (subscribers.email.length > 0)) {
-                          // But only if the notification state is of interest.
-                          if (plugin.options.services.email.states.includes(notification.state)) {
-                            app.debug("sending message to email subscribers");
-                            plugin.email
-                              .send({ ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } })
-                              .then((r) => { if (plugin.emailState == 1) { plugin.emailState = 0; log.W("email network connection has come up") }})
-                              .catch((e) => { if (plugin.emailState == 0) { plugin.emailState = 1; log.W("email network connection has gone down") }});
-                          }
-                        }
-
-                        // If web-push is configured and we have subscribers then maybe send a push notification.
-                        if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
-                          // But only if the notification state is of interest.
-                          if (plugin.options.services.webpush.states.includes(notification.state)) {
-                            app.debug("sending notification to web-push subscribers");
-                            try {
-                              plugin.webpush.send(
-                                createPushNotificationFromNotification(notification, path),
-                                subscribers.webpush.map(subscriber => subscriber.subscription),
-                                (sid) => handleWebpushFalure(sid, subscribers.webpush)
-                              );
-                            } catch(e) { log.W("web-push send failure (%s)", e.message); }
-                          }
-                        }
-                      //} else {
-                      //  log.W("cannot send notification (no Internet connection)", false);
-                      //}
-                    }).catch((e) => {
-                      log.E("error recovering subscriber resources (%s)", e,false);
-                    });
+                  // Web-push requires HTTPS...
+                  if ((plugin.options.services.webpush) && (!serverAddress.startsWith('https:'))) {
+                    log.W("disabling web-push service (server not running SSL)", false);
+                    delete plugin.options.services.webpush;
                   }
-                }));
-              });
-            }).catch((e) => {
-              ;
-            });
-          } else log.N("stopped: no services have been initialised");
-        }).catch((e) => { log.E("authentication server response could not be parsed"); })
-      } else { log.E("host authentication service denied login attempt by user '%s'", username); }
-    }).catch((e) => { log.E("cannot contact host authentication service"); })        
+          
+                  // Register listeners for any 'restart:' paths.
+                  plugin.options.paths.filter(path => (path.startsWith("restart:"))).forEach(path => {
+                    [label, notificationPath] = path.split(":");
+                    log.N("registering restart listener on '%s'", notificationPath, false);
+                    const stream = app.streambundle.getSelfStream(notificationPath);
+                    unsubscribes.push(stream.onValue((notification) => {
+                      log.N("restarting because of rule '%s'", path);
+                      restartPlugin(options);
+                    }));
+                  });
+
+                  // Attempt to create Email instance used to send emails.
+                  if (plugin.options.services.email) {
+                    app.debug('configuring email service');
+                    try {
+                      const transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
+                      const messageOptions = (plugin.options.services.email.messageOptions)?JSON.parse(plugin.options.services.email.messageOptions):null;
+                      plugin.email = new Email(transportOptions, messageOptions, app.debug);
+                    } catch(e) { app.debug(`email service configuration failed (${e.message})`); }
+                  }
+
+                  // Attempt to create Webpush instance used to send web-push notifications.
+                  if (plugin.options.services.webpush) {
+                    app.debug('configuring web-push service');
+                    try {
+                      var transportOptions = null;
+                      if (plugin.options.services.webpush.transportOptions) {
+                        transportOptions = JSON.parse(plugin.options.services.email.transportOptions);
+                      } else {
+                        transportOptions = { vapid: { privateKey: process.env.VAPID_PRIVATE_KEY, publicKey: process.env.VAPID_PUBLIC_KEY, subject: process.env.VAPID_SUBJECT } };
+                      }
+                      plugin.webpush = new Webpush(transportOptions, app.debug);
+                    } catch(e) { app.debug(`web-push service configuration failed (${e.message})`); }
+                  }
+
+                  // We must have at least one service.
+                  if ((plugin.email) || (plugin.webpush)) {
+                    // Expand and clean up our list of paths to be monitored.
+                    sanitizePaths(plugin.options.paths, serverAddress).then((expandedPaths) => {
+
+                      // Announce entering production
+                      log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
+                      app.debug(JSON.stringify(expandedPaths));
+
+                      // Maybe keep checking WAN connection
+                      if ((plugin.email) && (plugin.options.services.email.connectionCheckInterval) && (plugin.options.services.email.connectionCheckInterval > 0)) {
+                        connectionState = 'unknown';
+                        (function loop() {
+                          plugin.email.getTransporter().verify((e,s) => {
+                            connectionState = (e)?"down":"up";
+                            log.N(`listening on ${expandedPaths.length} notification path${((expandedPaths.length)?'':'s')} (WAN state is '${connectionState}'`);
+                          });
+                          timeoutId = setTimeout(() => { loop(); }, (plugin.options.services.email.connectionCheckInterval * 60000));
+                        })();
+                      }
+
+                      // Register a listener on each notification path.
+                      expandedPaths.forEach(path => {
+                        const stream = app.streambundle.getSelfStream("notifications." + path);
+                        unsubscribes.push(stream.onValue((notification) => {
+                          // Handle any received notifications.
+                          if ((notification) && (notification.state)) {
+
+                            // Get the subscriber list and separate out email and web-push subscribers.
+                            app.resourcesApi.listResources(plugin.options.subscriberDatabase.resourceType, {}, plugin.options.subscriberDatabase.resourceProviderId).then((resources) => {
+                              const subscribers = Object.keys(resources).reduce((a,k) => { if (k.includes('@')) a.email.push(k); if (!k.includes('@')) a.webpush.push(resources[k]); return(a); }, { email: [], webpush: [] });
+
+                              // If email is configured and we have subscribers then maybe we send a message.
+                              if ((plugin.email) && (plugin.email.getMessageOptions()) && (subscribers.email.length > 0)) {
+                                // But only if the notification state is of interest.
+                                if (plugin.options.services.email.states.includes(notification.state)) {
+                                  app.debug("sending message to email subscribers");
+                                  plugin.email
+                                  .send({ ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } })
+                                  .then((r) => { if (plugin.emailState == 1) { plugin.emailState = 0; log.W("email network connection has come up") }})
+                                  .catch((e) => { if (plugin.emailState == 0) { plugin.emailState = 1; log.W("email network connection has gone down") }});
+                                }
+                              }
+
+                              // If web-push is configured and we have subscribers then maybe send a push notification.
+                              if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
+                                // But only if the notification state is of interest.
+                                if (plugin.options.services.webpush.states.includes(notification.state)) {
+                                  app.debug("sending notification to web-push subscribers");
+                                  try {
+                                    plugin.webpush.send(
+                                      createPushNotificationFromNotification(notification, path),
+                                      subscribers.webpush.map(subscriber => subscriber.subscription),
+                                      (sid) => handleWebpushFalure(sid, subscribers.webpush)
+                                    );
+                                  } catch(e) { log.W("web-push send failure (%s)", e.message); }
+                                }
+                              }
+                            }).catch((e) => { log.E("error recovering subscriber resources (%s)", e,false); });
+                          } else log.W(`received invalid notification '${notification}'`);
+                        }));
+                      });
+                    }).catch((e) => { log.E('stopped: could not sanitize paths'); })
+                  } else log.E("stopped: no services have been configured");
+                });
+              } else log.E(`stopped: could not authenticate as user ${username}`);
+              }).catch((e) => { log.E('stopped: unable to contact host authentication service'); })
+            }).catch((e) => { log.E('stopped: unable to recover server endpoint(s)'); })
+          }).catch((e) => {})
+        } else log.E('stopped: mdns failed to acquire server address');
+      }).catch((e) => { log.E(`stopped: mdns internal error (${e})`); })
+    } catch(e) { log.E(`stopped: internal error '${e}'`); }
   }
 
   plugin.stop = function() {
@@ -283,6 +302,31 @@ module.exports = function (app) {
     require("./resources/openApi.json");
   }
 
+  async function findServerAddress(uuid, timeout=5) {
+    var serverAddress = null;
+    return(await new Promise((resolve, reject) => {
+      bonjour.find({ type: 'https' }, (service) => {
+        if (service.txt.self === uuid) serverAddress = "https://" + service.addresses[0] + ":" + service.port;
+      });
+  
+      setTimeout(() => {                                  // wait for 5 seconds, then...
+        if (serverAddress != null) {
+          resolve(serverAddress);
+        } else {
+          bonjour.find({ type: "http" }, (service) => {
+            if (service.txt.self === uuid) serverAddress = "http://" + service.addresses[0] + ":" + service.port;
+          });
+          setTimeout(() => {                              // wait for 5 seconds, then...
+            bonjour.destroy();
+            resolve(serverAddress);                            // destroy bonjour instance
+          }, timeout * 1000);    
+        }
+      }, (timeout * 1000));
+    }).then(() => {
+      return(serverAddress);
+    }));
+  }
+
   async function handleWebpushFalure(subscriberId, subscription) {
     app.debug("handleWebpushFailure(%s,%s)...", subscriberId, subscription);
     if (subscription.sendFailureCount > WEBPUSH_SEND_FAILURE_LIMIT) {
@@ -302,11 +346,13 @@ module.exports = function (app) {
    * @param {*} paths - mixed array from plugin configuration.
    * @returns - an array of Signal K paths.
    */
-  async function sanitizePaths(paths) {
+  async function sanitizePaths(paths, serverAddress) {
+    console.log(">>>>> %s %s", paths, serverAddress);
     var retval = [];
     for (var i = 0; i < paths.length; i++) {
-      if (paths[i].startsWith('http')) {
-        const response = await fetch(paths[i], { method: "GET", headers: { "Authorization": "Bearer " + plugin.token } });
+      if (paths[i].startsWith('/')) {
+        console.log(`${serverAddress}${paths[i]}`);
+        const response = await fetch(`${serverAddress}${paths[i]}`, { method: 'GET', headers: { 'Authorization': `Bearer ${plugin.token}` } });
         if (response.status == 200) {
           var responsePaths = await response.json();
           if (responsePaths) responsePaths.forEach(p => retval.push(p));

@@ -81,8 +81,8 @@ K OpenAPI service.
         which should be monitored for notifications; or
       </li>
       <li>
-        a URL specifying an API method that returns a list of Signal K paths
-        (for example <code>https://localhost:3443/plugins/alarm-manager/keys</code>); or
+        a URL path specifying an API method that returns a list of Signal K paths
+        (for example <code>/plugins/alarm-manager/keys</code>); or
       </li>
       <li>
         a Signal K path of the form 'restart:<em>path</em>' (for example
