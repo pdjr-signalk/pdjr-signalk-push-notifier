@@ -154,6 +154,8 @@ module.exports = function (app) {
           const [ username, password ] = plugin.options.credentials.split(':');   
           App.getAuthenticationToken(serverAddress, apiVersion, username, password).then((authenticationToken) => {
 
+            log.N(`connected to '${serverAddress}' using API '${apiVersion}'`, false);
+
             // Web-push requires HTTPS...
             if ((plugin.options.services.webpush) && (!serverAddress.startsWith('https:'))) {
               log.W("disabling web-push service (server not running SSL)", false);
@@ -198,11 +200,11 @@ module.exports = function (app) {
             // We must have at least one service.
             if ((plugin.email) || (plugin.webpush)) {
               // Expand and clean up our list of paths to be monitored.
-              sanitizePaths(plugin.options.paths, serverAddress).then((expandedPaths) => {
+              sanitizePaths(plugin.options.paths, serverAddress, authenticationToken).then((expandedPaths) => {
 
                 // Announce entering production
                 log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
-                app.debug(JSON.stringify(expandedPaths));
+                app.debug('monitoring notifications on: %s', JSON.stringify(expandedPaths, null, 2));
 
                 // Maybe keep checking WAN connection
                 if ((plugin.email) && (plugin.options.services.email.connectionCheckInterval) && (plugin.options.services.email.connectionCheckInterval > 0)) {
@@ -255,7 +257,7 @@ module.exports = function (app) {
                         }
 
                       }).catch((e) => { log.E("error recovering subscriber resources (%s)", e,false); });
-                    } else log.W(`received invalid notification '${notification}'`);
+                    }
                   }));
                 });
               }).catch((e) => { log.E('stopped: could not sanitize paths'); })
@@ -304,13 +306,11 @@ module.exports = function (app) {
    * @param {*} paths - mixed array from plugin configuration.
    * @returns - an array of Signal K paths.
    */
-  async function sanitizePaths(paths, serverAddress) {
-    console.log(">>>>> %s %s", paths, serverAddress);
+  async function sanitizePaths(paths, serverAddress, token) {
     var retval = [];
     for (var i = 0; i < paths.length; i++) {
       if (paths[i].startsWith('/')) {
-        console.log(`${serverAddress}${paths[i]}`);
-        const response = await fetch(`${serverAddress}${paths[i]}`, { method: 'GET', headers: { 'Authorization': `Bearer ${plugin.token}` } });
+        const response = await fetch(`${serverAddress}${paths[i]}`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } });
         if (response.status == 200) {
           var responsePaths = await response.json();
           if (responsePaths) responsePaths.forEach(p => retval.push(p));
