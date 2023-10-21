@@ -154,7 +154,7 @@ module.exports = function (app) {
           const [ username, password ] = plugin.options.credentials.split(':');   
           App.getAuthenticationToken(serverAddress, apiVersion, username, password).then((authenticationToken) => {
 
-            log.N(`connected to '${serverAddress}' using API '${apiVersion}'`, false);
+            log.N(`authenticated as '${username}' with '${serverAddress}' using API '${apiVersion}'`, false);
 
             // Web-push requires HTTPS...
             if ((plugin.options.services.webpush) && (!serverAddress.startsWith('https:'))) {
