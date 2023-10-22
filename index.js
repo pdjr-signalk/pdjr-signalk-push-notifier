@@ -154,18 +154,18 @@ module.exports = function (app) {
           const [ username, password ] = plugin.options.credentials.split(':');   
           App.getAuthenticationToken(serverAddress, apiVersion, username, password).then((authenticationToken) => {
 
-            log.N(`authenticated as '${username}' with '${serverAddress}' using API '${apiVersion}'`, false);
+            app.debug(`authenticated as '${username}' with '${serverAddress}' using API '${apiVersion}'`, false);
 
             // Web-push requires HTTPS...
             if ((plugin.options.services.webpush) && (!serverAddress.startsWith('https:'))) {
-              log.W("disabling web-push service (server not running SSL)", false);
+              log.W("disabling web-push service (server not running SSL)");
               delete plugin.options.services.webpush;
             }
                     
             // Register listeners for any 'restart:' paths.
             plugin.options.paths.filter(path => (path.startsWith("restart:"))).forEach(path => {
               [label, notificationPath] = path.split(":");
-              log.N("registering restart listener on '%s'", notificationPath, false);
+              app.debug("registering restart listener on '%s'", notificationPath, false);
               const stream = app.streambundle.getSelfStream(notificationPath);
               unsubscribes.push(stream.onValue((notification) => {
                 log.N("restarting because of rule '%s'", path);
@@ -203,7 +203,7 @@ module.exports = function (app) {
               sanitizePaths(plugin.options.paths, serverAddress, authenticationToken).then((expandedPaths) => {
 
                 // Announce entering production
-                log.N("listening on %d notification path%s (WAN state is '%s')", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
+                log.N("listening on %d notification path%s", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
                 app.debug('monitoring notifications on: %s', JSON.stringify(expandedPaths, null, 2));
 
                 // Maybe keep checking WAN connection
@@ -233,7 +233,7 @@ module.exports = function (app) {
                         if ((plugin.email) && (plugin.email.getMessageOptions()) && (subscribers.email.length > 0)) {
                           // But only if the notification state is of interest.
                           if (plugin.options.services.email.states.includes(notification.state)) {
-                            app.debug("sending message to email subscribers");
+                            app.debug(`notifying email subscribers ${subscribers.email}`);
                             plugin.email
                             .send({ ...createMessageFromNotification(notification, path), ...{ to: subscribers.email } })
                             .then((r) => { if (plugin.emailState == 1) { plugin.emailState = 0; log.W("email network connection has come up") }})
@@ -245,7 +245,7 @@ module.exports = function (app) {
                         if ((plugin.webpush) && (subscribers.webpush.length > 0)) {
                           // But only if the notification state is of interest.
                           if (plugin.options.services.webpush.states.includes(notification.state)) {
-                            app.debug("sending notification to web-push subscribers");
+                            app.debug(`notifying web-push subscribers ${subscribers.webpush.map(s => s.subscription.endpoint.slice(-8))}`);
                             try {
                               plugin.webpush.send(
                                 createPushNotificationFromNotification(notification, path),
