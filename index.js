@@ -203,7 +203,7 @@ module.exports = function (app) {
               sanitizePaths(plugin.options.paths, serverAddress, authenticationToken).then((expandedPaths) => {
 
                 // Announce entering production
-                log.N("listening on %d notification path%s", expandedPaths.length, ((expandedPaths.length == 0)?"s":""), connectionState);
+                log.N(`listening on ${expandedPaths.length} notification path${(expandedPaths.length == 1)?'':'s'}`);
                 app.debug('monitoring notifications on: %s', JSON.stringify(expandedPaths, null, 2));
 
                 // Maybe keep checking WAN connection
@@ -212,7 +212,7 @@ module.exports = function (app) {
                   (function loop() {
                     plugin.email.getTransporter().verify((e,s) => {
                       connectionState = (e)?"down":"up";
-                      log.N(`listening on ${expandedPaths.length} notification path${((expandedPaths.length)?'':'s')} (WAN state is '${connectionState}'`);
+                      log.N(`listening on ${expandedPaths.length} notification path${((expandedPaths.length == 1)?'':'s')} (WAN state is '${connectionState}'`);
                     });
                     timeoutId = setTimeout(() => { loop(); }, (plugin.options.services.email.connectionCheckInterval * 60000));
                   })();
