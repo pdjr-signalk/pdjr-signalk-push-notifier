@@ -325,7 +325,10 @@ in Google and an app specific password to be generated for use by the plugin.
 
 ### Configuring the host environment
 
-1. Create a persistent data store where the plugin can save push
+1. Enable Signal K's mDNS (Bonjour) service. The plugin uses this
+   to acquire the host system's IP address. 
+
+2. Create a persistent data store where the plugin can save push
    notification subscriptions.
    If you use the plugin defaults for 'subscriberDatabase' then
    configure Signal K's 'Resource Provider (built-in)' plugin to
