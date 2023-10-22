@@ -273,7 +273,7 @@ My ```push-notifier.json``` configuration file looks like this.
   "configuration": {
     "credentials": "push-notifier:password",
     "paths": [
-      "https://localhost:3443/plugins/alarm-manager/keys",
+      "/plugins/alarm-manager/keys",
       "restart:notifications.plugins.alarm-manager.keyChange"
     ],
     "services": {
@@ -292,7 +292,7 @@ My ```push-notifier.json``` configuration file looks like this.
   "enableDebug": false
 }
 ```
-Considering the ```services.emeail.transportOptions```  parameter: my mail
+Considering the ```services.email.transportOptions```  parameter: my mail
 service is vanilla SMTP secured with TLS and the transport configuration
 object I pass (as a JSON string) to ```transportOptions``` has the form:
 ```
@@ -321,7 +321,7 @@ different form:
 }
 ```
 Note that this GMail solution requires two-step verification to be enabled
-in Google and an app specific password to be configured for use by the plugin.
+in Google and an app specific password to be generated for use by the plugin.
 
 ### Configuring the host environment
 
