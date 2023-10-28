@@ -17,6 +17,7 @@
 const _ = require('lodash');
 const bonjour = require('bonjour')();
 const myApp = require('./lib/signalk-libapp/App.js');
+const HttpInterface = require('./lib/signalk-libhttpinterface/HttpInterface.js');
 const Log = require('./lib/signalk-liblog/Log.js');
 const Webpush = require('./Webpush.js');
 const Email = require('./Email.js');
@@ -134,6 +135,7 @@ module.exports = function (app) {
   plugin.uiSchema = PLUGIN_UISCHEMA;
 
   const App = new myApp(app)
+  const httpInterface = new HttpInterface(app.getSelfPath('uuid'));
   const log = new Log(plugin.id, { ncallback: app.setPluginStatus, ecallback: app.setPluginError });
   
   plugin.start = function(options, restartPlugin) {
@@ -149,12 +151,12 @@ module.exports = function (app) {
     app.debug("using configuration: %s", JSON.stringify(plugin.options, null, 2));
 
     try {
-      App.findServerAddress(app.getSelfPath('uuid')).then((serverAddress) => {
-        App.getApiVersion(serverAddress).then((apiVersion) => {
+      httpInterface.getServerAddress().then((serverAddress) => {
+        httpInterface.getServerInfo().then((serverInfo) => {
           const [ username, password ] = plugin.options.credentials.split(':');   
-          App.getAuthenticationToken(serverAddress, apiVersion, username, password).then((authenticationToken) => {
+          httpInterface.getAuthenticationToken(username, password).then((authenticationToken) => {
 
-            app.debug(`authenticated as '${username}' with '${serverAddress}' using API '${apiVersion}'`, false);
+            app.debug(`authenticated as '${username}' with '${serverAddress}' using API '${Object.keys(serverInfo.endpoints)[0]}'`, false);
 
             // Web-push requires HTTPS...
             if ((plugin.options.services.webpush) && (!serverAddress.startsWith('https:'))) {
