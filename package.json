@@ -32,6 +32,7 @@
   "dependencies": {
     "bonjour": "^3.5.0",
     "lodash": "^4.17.21",
+    "nodemailer": "^6.9.7",
     "sprintf-js": "^1.1.2",
     "web-push": "^3.6.6"
   },
