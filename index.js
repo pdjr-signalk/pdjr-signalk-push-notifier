@@ -15,7 +15,6 @@
  */
 
 const _ = require('lodash');
-const bonjour = require('bonjour')();
 const myApp = require('./lib/signalk-libapp/App.js');
 const HttpInterface = require('./lib/signalk-libhttpinterface/HttpInterface.js');
 const Log = require('./lib/signalk-liblog/Log.js');
