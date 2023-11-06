@@ -284,9 +284,7 @@ module.exports = function (app) {
     router.patch('/push/:subscriberId', handleRoutes);
   }
 
-  plugin.getOpenApi = function() {
-    require("./resources/openApi.json");
-  }
+  plugin.getOpenApi = () => require("./resources/openApi.json");
 
   async function handleWebpushFalure(subscriberId, subscription) {
     app.debug("handleWebpushFailure(%s,%s)...", subscriberId, subscription);
